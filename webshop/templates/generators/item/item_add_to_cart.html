@@ -137,6 +137,7 @@
 	let uom = null;
 	let currency = null;
 	let multiplier = null;
+	let initialQty = null;
 
 	function UpdatePricing(get_cart_status = true) {
 		if (get_cart_status) {
@@ -164,7 +165,7 @@
 						
 						// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
 						// Note: Ensure initial_qty is available in JS (pass it from Jinja if needed)
-						const initialQty = parseFloat("{{ initial_qty }}") || 1;; 
+						initialQty = parseFloat("{{ initial_qty }}") || 1;; 
 						multiplier = r.message.in_cart ? 1 : initialQty;					
 
 						if (multiplier > 1) {
