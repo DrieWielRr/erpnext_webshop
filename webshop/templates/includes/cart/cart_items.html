@@ -1,3 +1,7 @@
+{# Load custom jss #}	
+	<script src="/assets/webshop_custom/js/ui/translations.js"></script>
+	<script src="/assets/webshop_custom/js/ui/log.js"></script>
+
 {% from "webshop/templates/includes/macros.html" import product_image %}
 
 {% macro item_subtotal(item) %}
@@ -19,7 +23,10 @@
 {% endmacro %}
 
 {% for d in doc.items %}
-	<tr data-name="{{ d.name }}">
+	<tr
+		data-name="{{ d.name }}"
+		data-item-code="{{ d.item_code }}"		
+		data-configuration='{{ d.custom_item_configurations or "[]" }}'>
 		<td style="width: 60%;">
 			<div class="d-flex">
 				<div class="cart-item-image mr-4">
@@ -39,6 +46,7 @@
 					<div class="item-subtitle mr-2">
 						{{ d.item_code }}
 					</div>
+					<div class="item-configurations"></div>
 					{%- set variant_of = frappe.db.get_value('Item', d.item_code, 'variant_of') %}
 					{% if variant_of %}
 					<span class="item-subtitle mr-2">
@@ -62,16 +70,32 @@
 				{% set disabled = 'disabled' if d.is_free_item else '' %}
 				<div class="input-group number-spinner mt-1 mb-4">
 					<span class="input-group-prepend d-sm-inline-block">
-						<button class="btn cart-btn" data-dir="dwn" {{ disabled }}>
+						<button
+							class="btn cart-btn"
+							data-dir="dwn"
+							data-config='{{ d.custom_item_configurations or "[]" }}'
+							{{ disabled }}
+						>
 							{{ '–' if not d.is_free_item else ''}}
 						</button>
 					</span>
 
-					<input class="form-control text-center cart-qty" value="{{ d.get_formatted('qty') }}" data-item-code="{{ d.item_code }}"
-						style="max-width: 70px;" {{ disabled }}>
+					<input
+						class="form-control text-center cart-qty"
+						value="{{ d.get_formatted('qty') }}"
+						data-item-code="{{ d.item_code }}"
+						data-config='{{ d.custom_item_configurations or "[]" }}'
+						style="max-width: 70px;"
+						{{ disabled }}
+					>
 
 					<span class="input-group-append d-sm-inline-block">
-						<button class="btn cart-btn" data-dir="up" {{ disabled }}>
+						<button
+							class="btn cart-btn"
+							data-dir="up"
+							data-config='{{ d.custom_item_configurations or "[]" }}'
+							{{ disabled }}
+						>
 							{{ '+' if not d.is_free_item else ''}}
 						</button>
 					</span>
@@ -79,7 +103,7 @@
 
 				<div>
 					{% if not d.is_free_item %}
-						<div class="remove-cart-item column-sm-view d-flex" data-item-code="{{ d.item_code }}">
+						<div class="remove-cart-item column-sm-view d-flex" data-item-code="{{ d.item_code }}" data-config='{{ d.custom_item_configurations or "[]" }}'>
 							<span>
 								<svg class="icon sm remove-cart-item-logo"
 									width="18" height="18" viewBox="0 0 18 18"
@@ -109,3 +133,41 @@
 		{% endif %}
 	</tr>
 {% endfor %}
+
+<script>
+	
+	function renderConfigurations() {
+
+		log("[renderConfigurations] Running");
+		document.querySelectorAll("tr[data-configuration]").forEach(row => {			
+			const target = row.querySelector(".item-configurations");
+			if (!target) return;
+
+			const raw = row.dataset.configuration;
+			if (!raw) return;
+
+			let configs = [];
+
+			try {
+				configs = JSON.parse(raw);
+			} catch (e) {
+				console.error("Invalid configuration JSON", raw);
+				return;
+			}
+			
+			log("[renderConfigurations] Using the following JSON: ", raw);			
+			
+			target.innerHTML = configs.map(cfg => `
+				<div class="item-subtitle text-muted">
+					<strong>${translate(cfg.attribute)}</strong>: ${translate(cfg.value)}
+					${cfg.price > 0
+						? `(+€${Number(cfg.price).toFixed(2)})`
+						: ""}
+				</div>
+			`).join("");
+		});
+		log("[renderConfigurations] Completed");
+	}
+	
+	renderConfigurations();
+</script>
