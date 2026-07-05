@@ -207,7 +207,7 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 	
 	log("=== CUSTOM UPDATE_CART START ===")
 
-	(f"item_code={item_code}")
+	log(f"item_code={item_code}")
 	log(f"qty={qty}")
 	log(f"additional_notes={additional_notes}")
 	log(f"with_items={with_items}")
