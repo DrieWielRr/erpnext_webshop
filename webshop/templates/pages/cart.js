@@ -58,9 +58,11 @@ $.extend(shopping_cart, {
 
 			let notes = input.closest("td").siblings().find(".notes").text().trim();
 			var item_code = input.attr("data-item-code");
+			const configuration = JSON.parse($btn.closest('tr').attr('data-configuration') || "[]");
 			shopping_cart.shopping_cart_update({
 				item_code,
 				qty: newVal,
+				configuration: JSON.stringify(configuration),
 				additional_notes: notes
 			});
 		});
@@ -84,11 +86,11 @@ $.extend(shopping_cart, {
 		$(".cart-items").on("click", ".remove-cart-item", (e) => {
 			const $remove_cart_item_btn = $(e.currentTarget);
 			var item_code = $remove_cart_item_btn.data("item-code");
-			var config = $remove_cart_item_btn.data("config");
+			const configuration = JSON.parse($btn.closest('tr').attr('data-configuration') || "[]");
 			
 			shopping_cart.shopping_cart_update({
 				item_code: item_code,
-				configuration: JSON.stringify(config),
+				configuration: JSON.stringify(configuration),
 				qty: 0
 			});
 		});

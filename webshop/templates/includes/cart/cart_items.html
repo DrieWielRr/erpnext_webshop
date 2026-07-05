@@ -76,7 +76,6 @@
 						<button
 							class="btn cart-btn"
 							data-dir="dwn"
-							data-config='{{ d.custom_item_configurations or "[]" }}'
 							{{ disabled }}
 						>
 							{{ '–' if not d.is_free_item else ''}}
@@ -87,7 +86,6 @@
 						class="form-control text-center cart-qty"
 						value="{{ d.get_formatted('qty') }}"
 						data-item-code="{{ d.item_code }}"
-						data-config='{{ d.custom_item_configurations or "[]" }}'
 						style="max-width: 70px;"
 						{{ disabled }}
 					>
@@ -96,7 +94,6 @@
 						<button
 							class="btn cart-btn"
 							data-dir="up"
-							data-config='{{ d.custom_item_configurations or "[]" }}'
 							{{ disabled }}
 						>
 							{{ '+' if not d.is_free_item else ''}}
@@ -106,7 +103,7 @@
 
 				<div>
 					{% if not d.is_free_item %}
-						<div class="remove-cart-item column-sm-view d-flex" data-item-code="{{ d.item_code }}" data-config='{{ d.custom_item_configurations or "[]" }}'>
+						<div class="remove-cart-item column-sm-view d-flex" data-item-code="{{ d.item_code }}"'>
 							<span>
 								<svg class="icon sm remove-cart-item-logo"
 									width="18" height="18" viewBox="0 0 18 18"

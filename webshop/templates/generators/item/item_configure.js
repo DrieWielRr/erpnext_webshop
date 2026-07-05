@@ -251,7 +251,6 @@ class ItemConfigure {
 		}).join('\n');
 		webshop.webshop.shopping_cart.update_cart({
 			item_code,
-			configuration,
 			additional_notes,
 			qty: 1
 		});
