@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import json
+import hashlib
 import frappe
 import frappe.defaults
 from frappe import _, throw
