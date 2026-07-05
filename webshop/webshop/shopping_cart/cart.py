@@ -205,51 +205,53 @@ def get_cart_status(item_code):
 @frappe.whitelist()
 def update_cart(item_code, qty, additional_notes=None, with_items=False, configuration=None, is_add_to_cart=False):
 	
-    log("=== CUSTOM UPDATE_CART START ===")
+	log("=== CUSTOM UPDATE_CART START ===")
 
-    item_configuration = json.loads(configuration or "[]") 
-    item_configuration = validate_config(item_configuration)
-    item_configuration = normalize_config(item_configuration)                
-    item_configuration_hash = generate_configuration_hash(item_configuration)
-    item_configuration_price = calculate_configuration_price(item_configuration)
-	log(f"item_code={item_code}")
+	(f"item_code={item_code}")
 	log(f"qty={qty}")
 	log(f"additional_notes={additional_notes}")
 	log(f"with_items={with_items}")
 	log(f"is_add_to_cart={is_add_to_cart}")
-    log(f"configuration={configuration}")
-    log(f"item_configuration={item_configuration}")
-    log(f"item_configuration_hash={item_configuration_hash}")
-    log(f"item_configuration_price={item_configuration_price}")
+	log(f"configuration={configuration}")
+
+	item_configuration = json.loads(configuration or "[]") 
+	item_configuration = validate_config(item_configuration)
+	item_configuration = normalize_config(item_configuration)                
+	item_configuration_hash = generate_configuration_hash(item_configuration)
+	item_configuration_price = calculate_configuration_price(item_configuration)
+    
+	log(f"item_configuration={item_configuration}")
+	log(f"item_configuration_hash={item_configuration_hash}")
+	log(f"item_configuration_price={item_configuration_price}")
 
     # Force qty to float immediately to ensure all numerical comparisons are safe
-    qty = flt(qty)
+	qty = flt(qty)
 
-    quotation = _get_cart_quotation()
-    log(f"quotation name={quotation.get("name")}")
+	quotation = _get_cart_quotation()
+	log(f"quotation name={quotation.get("name")}")
 
-    empty_card = False    
-    if qty == 0:
-        quotation_items = [
+	empty_card = False    
+	if qty == 0:
+		quotation_items = [
             d for d in quotation.items
             if d.item_code == item_code
             and d.custom_config_hash != item_configuration_hash
         ]
-        if quotation_items:
-            quotation.set("items", quotation_items)
-        else:
-            empty_card = True
+		if quotation_items:
+			quotation.set("items", quotation_items)
+		else:
+			empty_card = True
 
-    else:
-        warehouse = frappe.get_cached_value(
+	else:
+		warehouse = frappe.get_cached_value(
 			"Website Item", {"item_code": item_code}, "website_warehouse"
 		)
         
-        quotation_items_all = [
+		quotation_items_all = [
             d for d in quotation.items
             if d.item_code == item_code
         ]
-        quotation_items = [
+		quotation_items = [
             d for d in quotation.items
             if d.item_code == item_code
             and d.custom_config_hash == item_configuration_hash
@@ -257,44 +259,44 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
         
         # ENFORCE MINIMUM PURCHASE QUANTITY)
         ########################################################################
-        try:
+		try:
             # Fetch the total items based on item_code            
-            total_items = sum(flt(d.qty) for d in quotation_items_all)
-            log(f"[MIN_QTY CHECK] total_items: {total_items} (Type: {type(total_items).__name__})")
+			total_items = sum(flt(d.qty) for d in quotation_items_all)
+			log(f"[MIN_QTY CHECK] total_items: {total_items} (Type: {type(total_items).__name__})")
             
             # Fetch the threshold from the Item Price record
-            min_qty_record = frappe.db.get_value(
+			min_qty_record = frappe.db.get_value(
                 "Item Price",
                 {"item_code": item_code, "price_list": "Standard Selling"}, 
                 "custom_initial_quantity"
             )            
-            log(f"[MIN_QTY CHECK] Database returned: {min_qty_record} (Type: {type(min_qty_record).__name__})")
+			log(f"[MIN_QTY CHECK] Database returned: {min_qty_record} (Type: {type(min_qty_record).__name__})")
             
-            if min_qty_record is not None:
-                min_qty = int(float(min_qty_record)) # Safe cast from float/string to int
+			if min_qty_record is not None:
+				min_qty = int(float(min_qty_record)) # Safe cast from float/string to int
                 
-        except Exception as e:
-            log(f"[MIN_QTY ERROR] Failed to fetch or parse custom_initial_quantity: {str(e)}")
-            min_qty = 1
+		except Exception as e:
+			log(f"[MIN_QTY ERROR] Failed to fetch or parse custom_initial_quantity: {str(e)}")
+			min_qty = 1
             
         # Force the input qty up to the minimum threshold if it falls below it
-        if total_items <= min_qty and qty < min_qty:
-            log(f"[MIN_QTY CHECK] CRITICAL: User ordered {qty}, but minimum is {min_qty}. Overriding qty.")
-            qty = flt(min_qty)
-        else:
-            log(f"[MIN_QTY CHECK] Quantity {qty} is valid (Minimum is {min_qty}).")   
+		if total_items <= min_qty and qty < min_qty:
+			log(f"[MIN_QTY CHECK] CRITICAL: User ordered {qty}, but minimum is {min_qty}. Overriding qty.")
+			qty = flt(min_qty)
+		else:
+			log(f"[MIN_QTY CHECK] Quantity {qty} is valid (Minimum is {min_qty}).")   
         ########################################################################
         
-        if not quotation_items:
-            log(f"appending item to quotation:")
-            log(f"doctype=doctype")
-            log(f"item_code={item_code}")
-            log(f"qty={qty}")
-            log(f"additional_notes={additional_notes}")
-            log(f"warehouse={warehouse}")
-            log(f"custom_config_hash={item_configuration_hash}")
-            log(f"custom_item_configurations={json.dumps(item_configuration)}")            
-            quotation.append(
+		if not quotation_items:
+			log(f"appending item to quotation:")
+			log(f"doctype=doctype")
+			log(f"item_code={item_code}")
+			log(f"qty={qty}")
+			log(f"additional_notes={additional_notes}")
+			log(f"warehouse={warehouse}")
+			log(f"custom_config_hash={item_configuration_hash}")
+			log(f"custom_item_configurations={json.dumps(item_configuration)}")            
+			quotation.append(
                 "items",
                 {
                     "doctype": "Quotation Item",
@@ -306,47 +308,47 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
                     "custom_item_configurations": json.dumps(item_configuration)    # CUSTOM CODE
                 },
             )
-        else:
-            log(f"Updating quotation items")
-            log(f"qty={qty}")
-            log(f"warehouse={warehouse}")
-            log(f"additional_notes={additional_notes}")
-            quotation_items[0].qty = (flt(quotation_items[0].qty) + 1) if is_add_to_cart else flt(qty)
-            quotation_items[0].warehouse = warehouse
-            quotation_items[0].additional_notes = additional_notes
+		else:
+			log(f"Updating quotation items")
+			log(f"qty={qty}")
+			log(f"warehouse={warehouse}")
+			log(f"additional_notes={additional_notes}")
+			quotation_items[0].qty = (flt(quotation_items[0].qty) + 1) if is_add_to_cart else flt(qty)
+			quotation_items[0].warehouse = warehouse
+			quotation_items[0].additional_notes = additional_notes
 
-    log(f"Applying cart settings")
-    apply_cart_settings(quotation=quotation)
+	log(f"Applying cart settings")
+	apply_cart_settings(quotation=quotation)
   
-    if not quotation_items:
-        for item in quotation.items:
-            if item.item_code == item_code and item.custom_config_hash == item_configuration_hash:
-                base_rate = item.rate
-                log(f"base_rate={base_rate}")
-                item.rate = base_rate + item_configuration_price
-                log(f"Updated item.rate={item.rate}")
-                item.amount = item.rate * item.qty
-                log(f"Updated item.amount={item.amount}")
+	if not quotation_items:
+		for item in quotation.items:
+			if item.item_code == item_code and item.custom_config_hash == item_configuration_hash:
+				base_rate = item.rate
+				log(f"base_rate={base_rate}")
+				item.rate = base_rate + item_configuration_price
+				log(f"Updated item.rate={item.rate}")
+				item.amount = item.rate * item.qty
+				log(f"Updated item.amount={item.amount}")
 
-    quotation.flags.ignore_permissions = True
-    quotation.payment_schedule = []
-    if not empty_card:
-        log(f"Quotation save")
-        quotation.save()
-    else:
-        log(f"Quotation delete")
-        quotation.delete()
-        quotation = None
+	quotation.flags.ignore_permissions = True
+	quotation.payment_schedule = []
+	if not empty_card:
+		log(f"Quotation save")
+		quotation.save()
+	else:
+		log(f"Quotation delete")
+		quotation.delete()
+		quotation = None
 
-    log(f"Applying cart count")
-    set_cart_count(quotation)
+	log(f"Applying cart count")
+	set_cart_count(quotation)
 
-    log(f"Return render_template")
-    log("=== CUSTOM UPDATE_CART END ===")
-    if cint(with_items):                 
-        context = get_cart_quotation(quotation)
-        
-        return {
+	log(f"Return render_template")
+	log("=== CUSTOM UPDATE_CART END ===")
+	if cint(with_items):                 
+		context = get_cart_quotation(quotation)
+			
+		return {
             "items": frappe.render_template(
                 "templates/includes/cart/cart_items.html", context
             ),
@@ -357,8 +359,8 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
                 "templates/includes/cart/cart_payment_summary.html", context
             )
         }
-    else:
-        return {"name": quotation.name}    
+	else:
+		return {"name": quotation.name}    
 # ----------------------------------------------------------------------------------------------------
 
 
