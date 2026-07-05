@@ -8,63 +8,10 @@
 
 {% if shopping_cart and shopping_cart.cart_settings.enabled %}
 {% set cart_settings = shopping_cart.cart_settings %}
+{% set custom_customization_attributes = frappe.db.get_value("Item", doc.item_code, "custom_customization_attributes") if doc.item_code else None %}
 
-{# 1. Check if the backend base document maps onto your configuration settings #}
-{% set item_doc = frappe.get_doc("Item", doc.item_code) if doc.item_code else None %}
 
 {% if item_doc and item_doc.custom_customization_attributes and item_doc.custom_customization_attributes | length > 0 %}
-    
-    {# 2. Instantiate mutable context namespace blocks #}
-    {% set ns = namespace(base_price=99999, discount_price=99999, initial_qty=1) %}
-
-    {# 3. Extract default prices and fields natively from Item Price #}
-    {% set price_record = frappe.db.get_value("Item Price", {"item_code": item_doc.item_code, "price_list": "Standard Selling"}, ["custom_initial_quantity", "price_list_rate"], as_dict=True) %}
-    {% if price_record %}
-        {% set ns.base_price = price_record.price_list_rate | float if price_record.price_list_rate else 99999 %}
-        {% set ns.discount_price = price_record.price_list_rate | float if price_record.price_list_rate else 99999 %}
-        {% set ns.initial_qty = price_record.custom_initial_quantity | int if price_record.custom_initial_quantity else 1 %}
-    {% endif %}
-
-    {# 4. Query active Pricing Rules #}
-    {% set pricing_rules = frappe.get_all(
-        "Pricing Rule",
-        filters={"disable": 0, "price_or_product_discount": "Price", "apply_on": ["in", ["Item Code", "Item Group", "Brand"]]},
-        fields=["name", "apply_on", "rate", "discount_percentage", "discount_amount"],
-        order_by="priority desc"
-    ) %}
-
-    {% set rule_applied = namespace(status=false) %}
-    {% for rule in pricing_rules %}
-        {% if not rule_applied.status %}
-            {% set rule_doc = frappe.get_doc("Pricing Rule", rule.name) %}
-            {% set match_found = false %}
-
-            {% if rule.apply_on == "Item Code" %}
-                {% if rule_doc.item_code == item_doc.item_code or frappe.db.exists("Pricing Rule Item Code", {"parent": rule.name, "item_code": item_doc.item_code}) %}
-                    {% set match_found = true %}
-                {% endif %}
-            {% elif rule.apply_on == "Item Group" and item_doc.item_group %}
-                {% if rule_doc.item_group == item_doc.item_group or frappe.db.exists("Pricing Rule Item Group", {"parent": rule.name, "item_group": item_doc.item_group}) %}
-                    {% set match_found = true %}
-                {% endif %}
-            {% elif rule.apply_on == "Brand" and item_doc.brand %}
-                {% if rule_doc.brand == item_doc.brand or frappe.db.exists("Pricing Rule Brand", {"parent": rule.name, "brand": item_doc.brand}) %}
-                    {% set match_found = true %}
-                {% endif %}
-            {% endif %}
-
-            {% if match_found %}
-                {% set rule_applied.status = true %}
-                {% if rule.rate %}
-                    {% set ns.discount_price = rule.rate | float %}
-                {% elif rule.discount_percentage %}
-                    {% set ns.discount_price = ns.base_price * (1.0 - (rule.discount_percentage | float / 100.0)) %}
-                {% elif rule.discount_amount %}
-                    {% set ns.discount_price = ns.base_price - rule.discount_amount | float %}
-                {% endif %}
-            {% endif %}
-        {% endif %}
-    {% endfor %}
 
     <div id="configurator-wrapper" class="mt-5 mb-6">
         <!-- The JS class dynamically renders form nodes into this placeholder layout context -->
@@ -73,11 +20,6 @@
     {# Embed the final configuration payload explicitly into the DOM framework #}
     <script type="application/json" id="configurator-payload">
     {
-        "item_code": "{{ item_doc.item_code }}",
-        "item_name": "{{ item_doc.item_name | replace('"', '\\"') }}",
-        "custom_initial_quantity": {{ ns.initial_qty }},
-        "base_price": {{ ns.base_price }},
-        "discount_price": {{ ns.discount_price }},
         "attributes": [
             {% for row in item_doc.custom_customization_attributes %}
                 {% if row.attribute %}

@@ -16,7 +16,7 @@
 				data-base-price="{{ product_info.price.formatted_price }}" 
 				data-mrp="{{ product_info.price.formatted_mrp }}" 
 				data-uom="{{ product_info.uom }}" 
-				data-currency="{{ product_info.price.currency_symbol or '€' }}">
+				data-currency="{{ product_info.price.currency_symbol or '€' }}"
 
 				<!-- Final Price -->
 				{% if price_info.formatted_mrp %}
@@ -131,66 +131,146 @@
 </div>
 
 <script>	
-	function UpdatePricing() {
-		frappe.call({
-			// Fetch Cart Status
-			method: "webshop.api.get_cart_status",
-			args: { item_code: "{{ doc.item_code }}" },
-			callback: function(r) {
-				if (r.message) {
-					function parseCurrency(str) {
-						if (!str) return 0;
-						// Remove all non-numeric chars except comma and dot
-						let cleaned = str.replace(/[^\d,.-]/g, '');
-						// Replace comma with dot for standard JS parseFloat
-						cleaned = cleaned.replace(',', '.');
-						return parseFloat(cleaned);
-					}
-					
-					log("UpdatePricing", r.message);
-					const container = document.getElementById('price-display-container');
-					const basePrice = parseFloat(parseCurrency(container.dataset.basePrice));
-					const mrpPrice = parseFloat(parseCurrency(container.dataset.mrp));
-					const uom = container.dataset.uom;
-					const currency = container.dataset.currency;
-					
-					// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
-					// Note: Ensure initial_qty is available in JS (pass it from Jinja if needed)
-					const initialQty = {{ initial_qty }}; 
-					const multiplier = r.message.in_cart ? 1 : initialQty;					
+	const container = document.getElementById('price-display-container');
+	let basePrice = null;
+	let mrpPrice = null;
+	let uom = null;
+	let currency = null;
+	let multiplier = null;
 
-					if (multiplier > 1) {
-						// Update Main Price
-						const newPrice = basePrice * multiplier;
-						document.getElementById('lowPrice').textContent = `${currency} ${newPrice.toFixed(2)}`;
-
-						// Update MRP (Striked Price)
-						if (mrpPrice > 0) {
-							const strikedElement = document.querySelector('#highPrice s');
-							const newMrp = mrpPrice * multiplier;
-							strikedElement.textContent = `MRP ${currency} ${newMrp.toFixed(2).replace('.', ',')}`;
+	function UpdatePricing(get_cart_status = true) {
+		if (get_cart_status) {
+			log("[UpdatePricing] calling frappe");
+			frappe.call({
+				// Fetch Cart Status
+				method: "webshop.api.get_cart_status",
+				args: { item_code: "{{ doc.item_code }}" },
+				callback: function(r) {
+					if (r.message) {
+						function parseCurrency(str) {
+							if (!str) return 0;
+							// Remove all non-numeric chars except comma and dot
+							let cleaned = str.replace(/[^\d,.-]/g, '');
+							// Replace comma with dot for standard JS parseFloat
+							cleaned = cleaned.replace(',', '.');
+							return parseFloat(cleaned);
 						}
 						
-						// Update UOM price
-						document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
-																											
-						log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
-					} else {
-						// Update Main Price
-						document.getElementById('lowPrice').textContent = `${currency} ${basePrice.toFixed(2)}`;
+						log("[UpdatePricing] callback", r.message);
+						basePrice = parseFloat(parseCurrency(container.dataset.basePrice));
+						mrpPrice = parseFloat(parseCurrency(container.dataset.mrp));
+						uom = container.dataset.uom;
+						currency = container.dataset.currency;
+						
+						// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
+						// Note: Ensure initial_qty is available in JS (pass it from Jinja if needed)
+						const initialQty = parseFloat("{{ initial_qty }}") || 1;; 
+						multiplier = r.message.in_cart ? 1 : initialQty;					
 
-						// Update MRP (Striked Price)
-						if (mrpPrice > 0) {
-							const strikedElement = document.querySelector('#highPrice s');
-							strikedElement.textContent = `MRP ${currency} ${mrpPrice.toFixed(2).replace('.', ',')}`;
+						if (multiplier > 1) {
+							// Update Main Price
+							const newPrice = basePrice * multiplier;
+							document.getElementById('lowPrice').textContent = `${currency} ${newPrice.toFixed(2)}`;
+
+							// Update MRP (Striked Price)
+							if (mrpPrice > 0) {
+								const strikedElement = document.querySelector('#highPrice s');
+								const newMrp = mrpPrice * multiplier;
+								strikedElement.textContent = `MRP ${currency} ${newMrp.toFixed(2).replace('.', ',')}`;
+							}
+							
+							// Update UOM price
+							document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+																												
+							log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
+						} else {
+							// Update Main Price
+							document.getElementById('lowPrice').textContent = `${currency} ${basePrice.toFixed(2)}`;
+
+							// Update MRP (Striked Price)
+							if (mrpPrice > 0) {
+								const strikedElement = document.querySelector('#highPrice s');
+								strikedElement.textContent = `MRP ${currency} ${mrpPrice.toFixed(2).replace('.', ',')}`;
+							}
+						
+							document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
+							log(`[UpdatePricing] UI Updated: Multiplier not required, restored standard pricing`);
 						}
-					
-						document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
-						log(`[UpdatePricing] UI Updated: Multiplier not required, restored standard pricing`);
 					}
 				}
+			});
+		} else {
+			log("[UpdatePricing] Updating prices only");
+
+			let extra = 0;
+			document.querySelectorAll(".combo").forEach(combo => {
+				const selected = combo._selected;
+				if (!selected) return;
+
+				// MULTI SELECT
+				if (Array.isArray(selected)) {
+					selected.forEach(v => {
+						extra += parseFloat(v.custom_price || 0);
+					});
+					return;
+				}
+
+				// SINGLE SELECT
+				extra += parseFloat(selected.custom_price || 0);
+			});
+			extra = extra * multiplier;
+
+			if (multiplier > 1) {
+				// Update Main Price
+				const newPrice = basePrice * multiplier;
+				document.getElementById('lowPrice').textContent = `${currency} ${(newPrice + extra).toFixed(2)}`;
+
+				// Update MRP (Striked Price)
+				if (mrpPrice > 0) {
+					const strikedElement = document.querySelector('#highPrice s');
+					const newMrp = mrpPrice * multiplier;
+					strikedElement.textContent = `MRP ${currency} ${newMrp.toFixed(2).replace('.', ',')}`;
+				}
+				
+				// Update UOM price
+				document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+																									
+				log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
+			} else {
+				// Update Main Price
+				document.getElementById('lowPrice').textContent = `${currency} ${(basePrice  + extra).toFixed(2)}`;
+
+				// Update MRP (Striked Price)
+				if (mrpPrice > 0) {
+					const strikedElement = document.querySelector('#highPrice s');
+					strikedElement.textContent = `MRP ${currency} ${mrpPrice.toFixed(2).replace('.', ',')}`;
+				}
+			
+				document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
+				log(`[UpdatePricing] UI Updated: Multiplier not required, restored standard pricing`);
 			}
-		});
+		}
+
+		handleAddToCartReset();
+	}
+
+	function handleAddToCartReset() {
+
+		const addBtn = document.querySelector(".btn-add-to-cart");
+		const viewBtn = document.querySelector(".btn-view-in-cart");
+
+		if (!addBtn || !viewBtn) return;
+
+		// if "view in cart" is visible → we are in cart state
+		const isInCart = !viewBtn.classList.contains("hidden");
+
+		if (!isInCart) return;
+
+		// user changed configuration → revert UI
+		addBtn.classList.remove("hidden");
+		viewBtn.classList.add("hidden");
+
+		log("item_configurator: reverted to add-to-cart due to config change");
 	}
 	
 	function collectConfiguration() {

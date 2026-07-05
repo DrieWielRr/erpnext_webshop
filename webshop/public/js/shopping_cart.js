@@ -90,6 +90,7 @@ $.extend(shopping_cart, {
 				args: {
 					item_code: opts.item_code,
 					qty: opts.qty,
+					configuration: opts.configuration,
 					additional_notes: opts.additional_notes !== undefined ? opts.additional_notes : undefined,
 					with_items: opts.with_items || 0
 				},

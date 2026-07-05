@@ -1,7 +1,3 @@
-// 1. Move these OUTSIDE and ABOVE the class definition
-let CONFIGURATOR_BASE_PRICE = null;
-let CONFIGURATOR_MIN_QTY = 1;
-
 class ItemConfigurations {
 
     static injectConfiguratorStyles() {
@@ -68,14 +64,9 @@ class ItemConfigurations {
             `;
             html += `</div>`;
         });
-
         container.innerHTML = html;
-        
-        // 2. These functions can now read/write CONFIGURATOR_BASE_PRICE seamlessly
-		
-        if (typeof initBasePrice === "function") initBasePrice(data);
-        this.initCombos(container, data);
-		
+
+        this.initCombos(container, data);		
 		log("[ItemConfigurations] buildConfigurator completed");        
     }
 	
@@ -162,7 +153,7 @@ class ItemConfigurations {
 							input.value = "";
 							dropdown.style.display = "none";
 							updateClearVisibility();
-							updatePrice();
+							UpdatePricing(false);
 							return;
 						}
 
@@ -175,7 +166,7 @@ class ItemConfigurations {
 						updateClearVisibility();
 
 						dropdown.style.display = "none";
-						updatePrice();
+						UpdatePricing(false);
 					};
 
 					dropdown.appendChild(div);
@@ -187,8 +178,6 @@ class ItemConfigurations {
 					dropdown.style.display = "none";
 				}
 			}
-
-
 
 			function renderTags(combo) {
 
@@ -229,18 +218,16 @@ class ItemConfigurations {
 
 						renderTags(combo);
 						updateClearVisibility();
-						updatePrice();
+						UpdatePricing(false);
 					};
 
 					tagBox.appendChild(tag);
 				});
 			}
-
 			
 			function getMax(combo) {
 				return Number(combo.dataset.max || 0);
 			}
-
 
 			// INPUT EVENTS	
 			clearBtn.addEventListener("click", (e) => {
@@ -264,7 +251,7 @@ class ItemConfigurations {
 				updateClearVisibility();
 
 				// recalculate total
-				updatePrice();
+				UpdatePricing(false);
 			});
 			
 			input.addEventListener("input", () => {
@@ -312,7 +299,7 @@ class ItemConfigurations {
 						input.value = "";
 						dropdown.style.display = "none";
 						updateClearVisibility();
-						updatePrice();
+						UpdatePricing(false);
 						return;
 					}
 
@@ -337,7 +324,7 @@ class ItemConfigurations {
 
 					dropdown.style.display = "none";
 					updateClearVisibility();
-					updatePrice();
+					UpdatePricing(false);
 
 				}, 150);
 			});
