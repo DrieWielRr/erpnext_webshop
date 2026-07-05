@@ -1,7 +1,8 @@
 {# Load custom jss #}	
 <script>	
     {% include "webshop/templates/includes/translations.js" %}
-    {% include "webshop/templates/includes/log.js" %}	    
+    {% include "webshop/templates/includes/log.js" %}	
+    {% include "templates/generators/item/item_configurations.js" %}     
 </script>
 
 
@@ -10,7 +11,7 @@
 {% set custom_customization_attributes = frappe.db.get_value("Item", doc.item_code, "custom_customization_attributes") if doc.item_code else None %}
 
 
-{% if item_doc and item_doc.custom_customization_attributes and item_doc.custom_customization_attributes | length > 0 %}
+{% if custom_customization_attributes and custom_customization_attributes | length > 0 %}
 
     <div id="configurator-wrapper" class="mt-5 mb-6">
         <!-- The JS class dynamically renders form nodes into this placeholder layout context -->
@@ -20,7 +21,7 @@
     <script type="application/json" id="configurator-payload">
     {
         "attributes": [
-            {% for row in item_doc.custom_customization_attributes %}
+            {% for row in custom_customization_attributes %}
                 {% if row.attribute %}
                     {% set attr_doc = frappe.get_doc("Item Attribute", row.attribute) %}
                     {
