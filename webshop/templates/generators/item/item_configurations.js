@@ -161,11 +161,17 @@ class ItemConfigurations {
 						}
 
 						// SINGLE SELECT MODE
-						// Display the translated version in the input field for the user
-						input.value = translate(v.value, true); 
-						
+
 						// Store the original object in the state so the underlying logic remains correct
 						combo._selected = v; 
+						input.dataset.rawValue = v.value;
+
+						// Display the translated version in the input field for the user
+						const priceText = v.custom_price > 0
+						? ` (+€${v.custom_price})`
+						: "";							
+						input.value = translate(v.value, true) + priceText; 
+
 						updateClearVisibility();
 
 						dropdown.style.display = "none";
@@ -244,6 +250,7 @@ class ItemConfigurations {
 
 				// clear textbox
 				input.value = "";
+				input.dataset.rawValue = "";
 
 				// clear selected state
 				combo._selected = allowMulti ? [] : null;
@@ -300,7 +307,6 @@ class ItemConfigurations {
 								combo._selected.push(customValue);
 								renderTags(combo);
 							}
-
 						}
 
 						input.value = "";
@@ -311,22 +317,20 @@ class ItemConfigurations {
 					}
 
 					// SINGLE MODE
+					if (!allowCustom) {
 
-					if (match) {
-						combo._selected = match;
-						input.value = match.value;
-					}
+						if (combo._selected) {
 
-					else if (allowCustom && typedValue !== "") {
-						combo._selected = {
-							value: typedValue,
-							custom_price: 0
-						};
-					}
+							const priceText = combo._selected.custom_price > 0
+								? ` (+€${combo._selected.custom_price})`
+								: "";
 
-					else {
-						input.value = "";
-						combo._selected = null;
+							input.value =
+								translate(combo._selected.value, true) + priceText;
+						}
+						else {
+							input.value = "";
+						}
 					}
 
 					dropdown.style.display = "none";
