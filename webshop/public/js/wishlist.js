@@ -42,11 +42,13 @@ $.extend(wishlist, {
 		$('.page_content').on("click", ".btn-add-to-cart", (e) => {
 			const $move_to_cart_btn = $(e.currentTarget);
 			let item_code = $move_to_cart_btn.data("item-code");
+			const configuration = JSON.parse($move_to_cart_btn.closest('tr').attr('data-configuration') || "[]");
 
 			shopping_cart.shopping_cart_update({
 				item_code,
 				qty: 1,
-				cart_dropdown: true
+				cart_dropdown: true,
+				configuration: configuration
 			});
 
 			let success_action = function() {

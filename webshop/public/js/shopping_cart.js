@@ -152,12 +152,13 @@ $.extend(shopping_cart, {
 		}
 	},
 
-	shopping_cart_update: function({item_code, qty, cart_dropdown, additional_notes}) {
+	shopping_cart_update: function({item_code, qty, cart_dropdown, configuration, additional_notes}) {
 		shopping_cart.update_cart({
 			item_code,
 			qty,
 			additional_notes,
 			with_items: 1,
+			configuration: configuration,
 			btn: this,
 			callback: function(r) {
 				if(!r.exc) {
