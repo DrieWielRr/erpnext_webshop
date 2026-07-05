@@ -103,7 +103,7 @@ class ItemConfigurations {
 
 				const filtered = attr.values
 					.filter(v => {
-						// Filteren gebeurt altijd op basis van de originele database-waarde (v.value)
+						// Filtering is always based on the original database value (v.value)
 						const matchesFilter = v.value.toLowerCase().includes(filter.toLowerCase());
 						
 						let isAlreadySelected = false;
@@ -120,14 +120,17 @@ class ItemConfigurations {
 					const div = document.createElement("div");
 					div.className = "combo-item";
 					
-					// --- NIEUW: Sla de originele, onvertaalde waarde op in de HTML ---
-					div.setAttribute("data-raw-value", v.value);
+					// store original data
+					div.setAttribute("data-raw-value", v.value);					
 
 					const priceText = v.custom_price > 0
 						? ` (+€${v.custom_price})`
-						: "";
+						: "";				
+						
+					// store original custom price data string
+					div.setAttribute("data-customPrice-value", v.value);
 
-					// Toon de VERTAALDE waarde aan de gebruiker in de interface
+					// Display the TRANSLATED value to the user in the interface
 					div.textContent = translate(v.value, true) + priceText;
 
 					div.onclick = () => {
@@ -144,9 +147,9 @@ class ItemConfigurations {
 								return;
 							}
 
-							// Controleer op basis van het originele object (v), dus v.value blijft "Red"
+							// Check against the original object (v), so v.value remains "Red"
 							if (!combo._selected.find(x => x.value === v.value)) {
-								combo._selected.push(v); // Slaat het hele originele object op (inclusif raw value)
+								combo._selected.push(v); // Stores the entire original object (including the raw value)
 								renderTags(combo);
 							}
 
@@ -158,10 +161,10 @@ class ItemConfigurations {
 						}
 
 						// SINGLE SELECT MODE
-						// Toon de vertaalde versie in de inputbalk voor de gebruiker
+						// Display the translated version in the input field for the user
 						input.value = translate(v.value, true); 
 						
-						// Sla het originele object op in de staat, zodat je logica op de achtergrond klopt
+						// Store the original object in the state so the underlying logic remains correct
 						combo._selected = v; 
 						updateClearVisibility();
 
@@ -205,14 +208,18 @@ class ItemConfigurations {
 					const tag = document.createElement("span");
 					tag.className = "tag";
 					
-					// --- NIEUW: Sla de originele, onvertaalde waarde op in de HTML ---
+					// store original data
 					tag.setAttribute("data-raw-value", v.value);
+					
+					const priceText = v.custom_price > 0
+						? ` (+€${v.custom_price})`
+						: "";	
 
-					// Toon de VERTAALDE waarde aan de gebruiker op het label
-					tag.textContent = translate(v.value, true);
+					// Display the TRANSLATED value to the user in the label
+					tag.textContent = translate(v.value, true) + priceText;
 
 					tag.onclick = () => {
-						// Het filteren gebeurt nog steeds veilig op v.value ("Red" !== "Blue")
+						// Filtering still works safely using v.value ("Red" !== "Blue")
 						combo._selected =
 							combo._selected.filter(x => x.value !== v.value);
 
