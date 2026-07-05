@@ -6,20 +6,28 @@
 <div class="item-cart row mt-2" data-variant-item-code="{{ item_code }}">
 	<div class="col-md-12">
 		<!-- Price and Availability -->
+		{# Pull the initial quantity requirement from the database #}
+		{% set price_record = frappe.db.get_value("Item Price", {"item_code": doc.item_code, "price_list": "Standard Selling"}, ["custom_initial_quantity"], as_dict=True) %}
+		{% set initial_qty = price_record.custom_initial_quantity | int if (price_record and price_record.custom_initial_quantity) else 1 %}
+
 		{% if cart_settings.show_price and product_info.price %}
 			{% set price_info = product_info.price %}
+			<div class="product-price" id="price-display-container" itemprop="offers" itemscope itemtype="https://schema.org/AggregateOffer"
+				data-base-price="{{ product_info.price.formatted_price }}" 
+				data-mrp="{{ product_info.price.formatted_mrp }}" 
+				data-uom="{{ product_info.uom }}" 
+				data-currency="{{ product_info.price.currency_symbol or '€' }}">
 
-			<div class="product-price" itemprop="offers" itemscope itemtype="https://schema.org/AggregateOffer">
 				<!-- Final Price -->
 				{% if price_info.formatted_mrp %}
-					<span itemprop="lowPrice" content="{{ price_info.formatted_price_sales_uom }}">{{ price_info.formatted_price_sales_uom }}</span>
+					<span itemprop="lowPrice" id="lowPrice" content="{{ price_info.formatted_price_sales_uom }}">{{ price_info.formatted_price_sales_uom }}</span>
 				{% else %}
-					<span itemprop="highPrice" content="{{ price_info.formatted_price_sales_uom }}">{{ price_info.formatted_price_sales_uom }}</span>
+					<span itemprop="highPrice" id="highPrice" content="{{ price_info.formatted_price_sales_uom }}">{{ price_info.formatted_price_sales_uom }}</span>
 				{% endif %}
 
 				<!-- Striked Price and Discount  -->
 				{% if price_info.formatted_mrp %}
-					<small itemprop="highPrice" class="formatted-price">
+					<small itemprop="highPrice" id="highPrice" class="formatted-price">
 						<s>MRP {{ price_info.formatted_mrp }}</s>
 					</small>
 					<small class="ml-1 formatted-price in-green">
@@ -28,7 +36,7 @@
 				{% endif %}
 
 				<!-- Price per UOM -->
-				<small class="formatted-price ml-2">
+				<small class="formatted-price ml-2" id="pricePerUOM">
 					({{ price_info.formatted_price }} / {{ product_info.uom }})
 				</small>
 			</div>
@@ -122,21 +130,125 @@
 	</div>
 </div>
 
-<script>
+<script>	
+	function UpdatePricing() {
+		frappe.call({
+			// Fetch Cart Status
+			method: "webshop_custom.api.get_cart_status",
+			args: { item_code: "{{ doc.item_code }}" },
+			callback: function(r) {
+				if (r.message) {
+					function parseCurrency(str) {
+						if (!str) return 0;
+						// Remove all non-numeric chars except comma and dot
+						let cleaned = str.replace(/[^\d,.-]/g, '');
+						// Replace comma with dot for standard JS parseFloat
+						cleaned = cleaned.replace(',', '.');
+						return parseFloat(cleaned);
+					}
+					
+					log("UpdatePricing", r.message);
+					const container = document.getElementById('price-display-container');
+					const basePrice = parseFloat(parseCurrency(container.dataset.basePrice));
+					const mrpPrice = parseFloat(parseCurrency(container.dataset.mrp));
+					const uom = container.dataset.uom;
+					const currency = container.dataset.currency;
+					
+					// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
+					// Note: Ensure initial_qty is available in JS (pass it from Jinja if needed)
+					const initialQty = {{ initial_qty }}; 
+					const multiplier = r.message.in_cart ? 1 : initialQty;					
+
+					if (multiplier > 1) {
+						// Update Main Price
+						const newPrice = basePrice * multiplier;
+						document.getElementById('lowPrice').textContent = `${currency} ${newPrice.toFixed(2)}`;
+
+						// Update MRP (Striked Price)
+						if (mrpPrice > 0) {
+							const strikedElement = document.querySelector('#highPrice s');
+							const newMrp = mrpPrice * multiplier;
+							strikedElement.textContent = `MRP ${currency} ${newMrp.toFixed(2).replace('.', ',')}`;
+						}
+						
+						// Update UOM price
+						document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+																											
+						log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
+					} else {
+						// Update Main Price
+						document.getElementById('lowPrice').textContent = `${currency} ${basePrice.toFixed(2)}`;
+
+						// Update MRP (Striked Price)
+						if (mrpPrice > 0) {
+							const strikedElement = document.querySelector('#highPrice s');
+							strikedElement.textContent = `MRP ${currency} ${mrpPrice.toFixed(2).replace('.', ',')}`;
+						}
+					
+						document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
+						log(`[UpdatePricing] UI Updated: Multiplier not required, restored standard pricing`);
+					}
+				}
+			}
+		});
+	}
+	
+	function collectConfiguration() {
+		const configuration = [];
+
+		document.querySelectorAll(".combo").forEach(combo => {
+			console.log("[collectConfiguration] combo", combo);
+			
+			const id = combo.dataset.id;
+			const attribute = combo.dataset.attribute;
+			const selected = combo._selected;
+
+			if (!selected) return;
+
+			if (Array.isArray(selected)) {
+				selected.forEach(v => {
+					configuration.push({
+						id,
+						attribute,
+						value: v.value,
+						price: v.custom_price || 0
+					});
+				});
+				return;
+			}
+
+			configuration.push({
+				id,
+				attribute,
+				value: selected.value,
+				price: selected.custom_price || 0
+			});
+		});
+		console.log("[collectConfiguration] configuration", configuration);
+		return configuration;
+	}
+	
 	frappe.ready(() => {
+		UpdatePricing();
+		
 		$('.page_content').on('click', '.btn-add-to-cart', (e) => {
-			// Bind action on add to cart button
 			const $btn = $(e.currentTarget);
 			$btn.prop('disabled', true);
-			const item_code = $btn.data('item-code');
-			webshop.webshop.shopping_cart.update_cart({
-				item_code,
+			
+			// We send our custom data through the wrapper's args			
+			const args = {
+				item_code: $btn.data('item-code'),
 				qty: 1,
+				configuration: JSON.stringify(collectConfiguration()),
+				is_add_to_cart: 1
+			}
+			console.log("[btn-add-to-cart] send custom data args", args);
+			
+			webshop.webshop.shopping_cart.update_cart({
+				...args,
 				callback(r) {
 					$btn.prop('disabled', false);
-					if (r.message) {
-						$('.btn-add-to-cart, .btn-view-in-cart').toggleClass('hidden');
-					}
+					UpdatePricing();
 				}
 			});
 		});
@@ -174,8 +286,6 @@
 
 		});
 	});
-
-
 </script>
 
 {% endif %}

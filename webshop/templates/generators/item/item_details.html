@@ -36,10 +36,25 @@
 		</span>
 		<span itemprop="name">{{ _(doc.item_code) }}</span>
 	</p>
+	
+	<!-- CUSTOM CODE FOR ITEM CONFIGURATION GENERATOR -->
+	<!----------------------------------------------------------------------------------->
+	{% set item_doc = frappe.get_doc("Item", doc.item_code) if doc.item_code else None %}
+	<!----------------------------------------------------------------------------------->
+	
 	{% if has_variants %}
 		<!-- configure template -->
 		{% include "templates/generators/item/item_configure.html" %}
 	{% else %}
+	
+		<!-- CUSTOM CODE FOR ITEM CONFIGURATION GENERATOR -->
+		<!----------------------------------------------------------------------------------->
+		{% if item_doc and item_doc.custom_customization_attributes and item_doc.custom_customization_attributes | length > 0 %}
+			<!-- configure item configuration -->			
+			{% include "templates/generators/item/item_configurations.html" %}
+		{% endif %}
+		<!----------------------------------------------------------------------------------->
+	
 		<!-- add variant to cart -->
 		{% include "templates/generators/item/item_add_to_cart.html" %}
 	{% endif %}
