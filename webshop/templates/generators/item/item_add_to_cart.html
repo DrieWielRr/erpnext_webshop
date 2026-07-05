@@ -134,7 +134,7 @@
 	function UpdatePricing() {
 		frappe.call({
 			// Fetch Cart Status
-			method: "webshop_custom.api.get_cart_status",
+			method: "webshop.api.get_cart_status",
 			args: { item_code: "{{ doc.item_code }}" },
 			callback: function(r) {
 				if (r.message) {
