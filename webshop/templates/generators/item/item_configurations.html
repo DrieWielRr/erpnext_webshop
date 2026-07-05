@@ -8,8 +8,13 @@
 
 {% if shopping_cart and shopping_cart.cart_settings.enabled %}
 {% set cart_settings = shopping_cart.cart_settings %}
-{% set custom_customization_attributes = frappe.db.get_value("Item", doc.item_code, "custom_customization_attributes") if doc.item_code else None %}
-
+{% set custom_customization_attributes = None %}
+{% if doc.item_code %}
+    {% set item_records = frappe.get_all("Item", filters={"name": doc.item_code}, fields=["custom_customization_attributes"], limit=1) %}
+    {% if item_records %}
+        {% set custom_customization_attributes = item_records[0].custom_customization_attributes %}
+    {% endif %}
+{% endif %}
 
 {% if custom_customization_attributes and custom_customization_attributes | length > 0 %}
 
