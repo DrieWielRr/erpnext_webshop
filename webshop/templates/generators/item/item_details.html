@@ -51,12 +51,12 @@
 		<!----------------------------------------------------------------------------------->
 		{% if item_doc and item_doc.custom_customization_attributes and item_doc.custom_customization_attributes | length > 0 %}
 			<!-- configure item configuration -->			
-			<!--  {% include "templates/generators/item/item_configurations.html" %}-->
+			{% include "templates/generators/item/item_configurations.html" %}
 		{% endif %}
 		<!----------------------------------------------------------------------------------->
 	
 		<!-- add variant to cart -->
-		{% include "templates/generators/item/item_add_to_cart.html" %}
+		<!--{% include "templates/generators/item/item_add_to_cart.html" %}-->
 	{% endif %}
 	<!-- description -->
 	<div class="product-description" itemprop="description">
