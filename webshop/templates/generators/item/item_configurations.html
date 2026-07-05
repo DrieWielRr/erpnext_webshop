@@ -1,9 +1,9 @@
 {# Load custom jss #}	
-	<script src="webshop/templates/includes/translations.js"></script>
-	<script src="webshop/templates/includes/log.js"></script>
-	<script>		
-			{% include "templates/generators/item/item_configurations.js" %}
-	</script>
+<script>	
+        {% include "webshop/templates/includes/translations.js" %}
+        {% include "webshop/templates/includes/log.js" %}	
+        {% include "templates/generators/item/item_configurations.js" %}     
+</script>
 
 
 {% if shopping_cart and shopping_cart.cart_settings.enabled %}

@@ -1,6 +1,9 @@
 {# Load custom jss #}	
-	<script src="webshop/templates/includes/translations.js"></script>
-	<script src="webshop/templates/includes/log.js"></script>
+<script>	
+        {% include "webshop/templates/includes/translations.js" %}
+        {% include "webshop/templates/includes/log.js" %}	
+        {% include "templates/generators/item/item_configurations.js" %}     
+</script>
 
 {% from "webshop/templates/includes/macros.html" import product_image %}
 
