@@ -1,3 +1,4 @@
+
 {% extends "templates/web.html" %}
 
 {% block title %} {{ _("Shopping Cart") }} {% endblock %}
@@ -83,8 +84,9 @@
 		<div class="col-md-4">
 			<div class="cart-payment-addresses">
 				<!-- Apply Coupon Code  -->
-				{% set show_coupon_code = cart_settings.show_apply_coupon_code_in_website and cart_settings.enable_checkout %}
+				<!-- {% set show_coupon_code = cart_settings.show_apply_coupon_code_in_website and cart_settings.enable_checkout %}  -->
 				{% set coupon_code = doc.coupon_code if doc.coupon_code else "" %}
+				{% set show_coupon_code = 1 %}
 
 				{% if show_coupon_code == 1%}
 					{% if coupon_code %}
@@ -133,6 +135,7 @@
 	{% endif %}
 </div>
 {% endif %}
+
 
 {% endblock %}
 

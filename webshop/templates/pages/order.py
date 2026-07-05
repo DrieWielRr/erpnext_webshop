@@ -4,7 +4,10 @@
 import frappe
 from frappe import _
 
-from webshop.webshop.doctype.webshop_settings.webshop_settings import show_attachments
+from erpnext.accounts.doctype.payment_request.payment_request import (
+	ALLOWED_DOCTYPES_FOR_PAYMENT_REQUEST,
+	get_amount,
+)
 
 
 def get_context(context):
@@ -14,16 +17,11 @@ def get_context(context):
 	if hasattr(context.doc, "set_indicator"):
 		context.doc.set_indicator()
 
-	if show_attachments():
-		context.attachments = get_attachments(frappe.form_dict.doctype, frappe.form_dict.name)
-
 	context.parents = frappe.form_dict.parents
 	context.title = frappe.form_dict.name
 	context.payment_ref = frappe.db.get_value(
 		"Payment Request", {"reference_name": frappe.form_dict.name}, "name"
 	)
-
-	context.enabled_checkout = frappe.get_doc("Webshop Settings").enable_checkout
 
 	default_print_format = frappe.db.get_value(
 		"Property Setter",
@@ -38,11 +36,11 @@ def get_context(context):
 	if not frappe.has_website_permission(context.doc):
 		frappe.throw(_("Not Permitted"), frappe.PermissionError)
 
+	context.available_loyalty_points = 0.0
 	if context.doc.get("customer"):
 		# check for the loyalty program of the customer
-		customer_loyalty_program = frappe.db.get_value(
-			"Customer", context.doc.customer, "loyalty_program"
-		)
+		customer_loyalty_program = frappe.db.get_value("Customer", context.doc.customer, "loyalty_program")
+
 		if customer_loyalty_program:
 			from erpnext.accounts.doctype.loyalty_program.loyalty_program import (
 				get_loyalty_program_details_with_points,
@@ -53,8 +51,11 @@ def get_context(context):
 			)
 			context.available_loyalty_points = int(loyalty_program_details.get("loyalty_points"))
 
-	# show Make Purchase Invoice button based on permission
-	context.show_make_pi_button = frappe.has_permission("Purchase Invoice", "create")
+	context.show_pay_button, context.pay_amount = get_payment_details(context.doc)
+	context.show_make_pi_button = False
+	if context.doc.get("supplier"):
+		# show Make Purchase Invoice button based on permission
+		context.show_make_pi_button = frappe.has_permission("Purchase Invoice", "create")
 
 
 def get_attachments(dt, dn):
@@ -63,3 +64,19 @@ def get_attachments(dt, dn):
 		fields=["name", "file_name", "file_url", "is_private"],
 		filters={"attached_to_name": dn, "attached_to_doctype": dt, "is_private": 0},
 	)
+
+
+def get_payment_details(doc):
+	show_pay_button, amount = (
+		(
+			"payments" in frappe.get_installed_apps()
+			and frappe.db.get_single_value("Buying Settings", "show_pay_button")
+			and doc.doctype in ALLOWED_DOCTYPES_FOR_PAYMENT_REQUEST
+		),
+		0,
+	)
+	if not show_pay_button:
+		return show_pay_button, amount
+
+	amount = get_amount(doc)
+	return bool(amount), amount

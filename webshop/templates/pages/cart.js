@@ -84,9 +84,11 @@ $.extend(shopping_cart, {
 		$(".cart-items").on("click", ".remove-cart-item", (e) => {
 			const $remove_cart_item_btn = $(e.currentTarget);
 			var item_code = $remove_cart_item_btn.data("item-code");
-
+			var config = $remove_cart_item_btn.data("config");
+			
 			shopping_cart.shopping_cart_update({
 				item_code: item_code,
+				configuration: JSON.stringify(config),
 				qty: 0
 			});
 		});
