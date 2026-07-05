@@ -207,22 +207,23 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 	
     log("=== CUSTOM UPDATE_CART START ===")
 
-    # Force qty to float immediately to ensure all numerical comparisons are safe
-    qty = flt(qty)
-
-    # CUSTOM CODE (ITEM CONFIGURATION)
-    ########################################################################
-    # If provided generate the custom configuration
     item_configuration = json.loads(configuration or "[]") 
     item_configuration = validate_config(item_configuration)
     item_configuration = normalize_config(item_configuration)                
     item_configuration_hash = generate_configuration_hash(item_configuration)
     item_configuration_price = calculate_configuration_price(item_configuration)
+	log(f"item_code={item_code}")
+	log(f"qty={qty}")
+	log(f"additional_notes={additional_notes}")
+	log(f"with_items={with_items}")
+	log(f"is_add_to_cart={is_add_to_cart}")
     log(f"configuration={configuration}")
     log(f"item_configuration={item_configuration}")
     log(f"item_configuration_hash={item_configuration_hash}")
     log(f"item_configuration_price={item_configuration_price}")
-    ########################################################################
+
+    # Force qty to float immediately to ensure all numerical comparisons are safe
+    qty = flt(qty)
 
     quotation = _get_cart_quotation()
     log(f"quotation name={quotation.get("name")}")
@@ -244,8 +245,6 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 			"Website Item", {"item_code": item_code}, "website_warehouse"
 		)
         
-        # CUSTOM CODE
-        ########################################################################
         quotation_items_all = [
             d for d in quotation.items
             if d.item_code == item_code
@@ -255,10 +254,8 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
             if d.item_code == item_code
             and d.custom_config_hash == item_configuration_hash
         ]        
-        ########################################################################
-        #quotation_items = quotation.get("items", {"item_code": item_code})
         
-        # CUSTOM CODE: (ENFORCE MINIMUM PURCHASE QUANTITY)
+        # ENFORCE MINIMUM PURCHASE QUANTITY)
         ########################################################################
         try:
             # Fetch the total items based on item_code            
@@ -320,9 +317,7 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 
     log(f"Applying cart settings")
     apply_cart_settings(quotation=quotation)
-    
-    # CUSTOM CODE
-    ########################################################################    
+  
     if not quotation_items:
         for item in quotation.items:
             if item.item_code == item_code and item.custom_config_hash == item_configuration_hash:
@@ -332,7 +327,6 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
                 log(f"Updated item.rate={item.rate}")
                 item.amount = item.rate * item.qty
                 log(f"Updated item.amount={item.amount}")
-    ########################################################################
 
     quotation.flags.ignore_permissions = True
     quotation.payment_schedule = []
