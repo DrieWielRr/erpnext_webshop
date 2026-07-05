@@ -249,8 +249,10 @@ class ItemConfigure {
 		const additional_notes = Object.keys(this.range_values || {}).map(attribute => {
 			return `${attribute}: ${this.range_values[attribute]}`;
 		}).join('\n');
+		const configuration = 
 		webshop.webshop.shopping_cart.update_cart({
 			item_code,
+			configuration,
 			additional_notes,
 			qty: 1
 		});
