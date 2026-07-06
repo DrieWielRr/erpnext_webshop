@@ -49,14 +49,6 @@ def queue_translation_export(doc, method=None):
 
 
 def translation_export(lang):
-    frappe.log_error(
-        title="Translation Worker Debug",
-        message=(
-            f"file={__file__}\n"
-            f"debug={frappe.conf.get('enable_debug')}"
-        )
-    )
-
     dirty_key = f"translation_dirty:{lang}"
     job_key = f"translation_job_scheduled:{lang}"
 
