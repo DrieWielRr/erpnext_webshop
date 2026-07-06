@@ -49,7 +49,17 @@
 					<div class="item-subtitle mr-2">
 						{{ d.item_code }}
 					</div>
-					<div class="item-configurations"></div>
+					<div class="item-configurations"></div>	
+					{% set configs = d.custom_item_configurations | parse_json %}
+					{% for cfg in configs %}
+						<div class="item-subtitle text-muted">
+							<strong>{{ translate(cfg.attribute) }}</strong>: {{ translate(cfg.value) }}
+							{% if cfg.price and cfg.price > 0 %}
+								(+€{{ "%.2f"|format(cfg.price|float) }})
+							{% endif %}
+						</div>
+					{% endfor %}
+
 					{%- set variant_of = frappe.db.get_value('Item', d.item_code, 'variant_of') %}
 					{% if variant_of %}
 					<span class="item-subtitle mr-2">
@@ -133,41 +143,3 @@
 		{% endif %}
 	</tr>
 {% endfor %}
-
-<script>
-	
-	function renderConfigurations() {
-
-		log("[renderConfigurations] Running");
-		document.querySelectorAll("tr[data-configuration]").forEach(row => {			
-			const target = row.querySelector(".item-configurations");
-			if (!target) return;
-
-			const raw = row.dataset.configuration;
-			if (!raw) return;
-
-			let configs = [];
-
-			try {
-				configs = JSON.parse(raw);
-			} catch (e) {
-				console.error("Invalid configuration JSON", raw);
-				return;
-			}
-			
-			log("[renderConfigurations] Using the following JSON: ", raw);			
-			
-			target.innerHTML = configs.map(cfg => `
-				<div class="item-subtitle text-muted">
-					<strong>${translate(cfg.attribute)}</strong>: ${translate(cfg.value)}
-					${cfg.price > 0
-						? `(+€${Number(cfg.price).toFixed(2)})`
-						: ""}
-				</div>
-			`).join("");
-		});
-		log("[renderConfigurations] Completed");
-	}
-	
-	renderConfigurations();
-</script>
