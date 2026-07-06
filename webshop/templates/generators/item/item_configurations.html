@@ -26,52 +26,58 @@
         .combo-clear:hover { color: #333; }
     </style>
 
-    <div id="configurator-wrapper" class="mt-5 mb-6">
-        <!-- The JS class dynamically renders form nodes into this placeholder layout context -->
-    </div>
+    <div id="configurator">
+    <br>
+    {% for row in custom_customization_attributes %}
+        {% if row.attribute %}
+            {% set attr_doc = frappe.get_doc("Item Attribute", row.attribute) %}
+            {% set attr_name = attr_doc.custom_display_name | d(attr_doc.name) %}
+            {% set is_multi = attr_doc.custom_checkbox_multi_select | d(0) | int %}
+            {% set is_free_text = attr_doc.custom_checkbox_free_text | d(0) | int %}
+            {% set max_select = attr_doc.custom_max_select | d(99) | int %}
 
-    {# Embed the final configuration payload explicitly into the DOM framework #}
-    <script type="application/json" id="configurator-payload">
-    {
-        "attributes": [
-            {% for row in custom_customization_attributes %}
-                {% if row.attribute %}
-                    {% set attr_doc = frappe.get_doc("Item Attribute", row.attribute) %}
-                    {
-                        "id": "{{ attr_doc.name }}",
-                        "attribute": "{{ attr_doc.custom_display_name | d(attr_doc.name) | replace('"', '\\"') }}",
-                        "custom_checkbox_multi_select": {{ attr_doc.custom_checkbox_multi_select | d(0) | int }},
-                        "custom_checkbox_free_text": {{ attr_doc.custom_checkbox_free_text | d(0) | int }},
-                        "custom_max_select": {{ attr_doc.custom_max_select | d(99) | int }},
-                        "values": [
-                            {% for v_row in attr_doc.item_attribute_values %}
-                            {
-                                "value": "{{ v_row.attribute_value | replace('"', '\\"') }}",
-                                "abbr": "{{ v_row.abbr | d('') | replace('"', '\\"') }}",
-                                "custom_price": {{ v_row.custom_price | d(0) | float }}
-                            }{% if not loop.last %},{% endif %}
-                            {% endfor %}
-                        ]
-                    }{% if not loop.last %},{% endif %}
+            <div class="config-attribute">
+                {# Render Labels dynamically based on configuration flags #}
+                {% if is_free_text == 1 %}
+                    <label class="config-label">
+                        {{ _(attr_name) }} ({{ _('wishes') }})
+                    </label>
+                {% elif is_multi == 1 %}
+                    <label class="config-label">
+                        {{ _(attr_name) }} ({{ _('Select up to') }} {{ max_select }} {{ _('items') }}):
+                    </label>
+                {% else %}
+                    <label class="config-label">
+                        {{ _(attr_name) }}:
+                    </label>
                 {% endif %}
-            {% endfor %}
-        ]
-    }
-    </script>
 
-    <script>						        
-        // Setup initial parsing operations automatically on template load execution
-        (function() {
-            const rawData = document.getElementById("configurator-payload");
-            const itemContentRoot = document.querySelector(".item-content");
-            
-            if (rawData && itemContentRoot) {
-                const parsedConfigData = JSON.parse(rawData.textContent);
-                
-                // Pass parsed configurations straight into your class runner layout
-                ItemConfigurations.buildConfigurator(parsedConfigData, itemContentRoot);
-            }
-        })();
-    </script>
+                {# Main Combo Component Structure #}
+                <div class="combo"
+                     data-id="{{ attr_doc.name }}"
+                     data-attribute="{{ attr_name | escape }}"
+                     data-multi="{{ 1 if is_multi == 1 else 0 }}"
+                     data-max="{{ max_select }}"
+                     data-allow-custom="{{ 1 if is_free_text == 1 else 0 }}">
+                    
+                    <div class="tag-box" style="display: none;"></div>
+                    
+                    <div class="input-row">
+                        <input type="text" 
+                               id="{{ attr_doc.name }}" 
+                               class="combo-input" 
+                               placeholder="{{ _('Select') }} {{ attr_name | escape }}" 
+                               autocomplete="off">
+                        <span class="combo-clear" style="display: none;">×</span>
+                    </div>
+                    
+                    <div class="combo-dropdown" style="display: none;"></div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+
 {% endif %}
 {% endif %}
