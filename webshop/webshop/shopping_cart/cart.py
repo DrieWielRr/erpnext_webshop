@@ -193,30 +193,25 @@ def generate_configuration_summary(configuration):
         value = option.get("value")
         price = flt(option.get("price", 0))
 
-        if not attribute:
+        if not attribute or not value:
             continue
 
-        if attribute not in grouped:
-            grouped[attribute] = []
+        attribute = _(attribute)
+        value = _(value)
 
         label = value
 
         if price:
             label += f" (+€{price:.2f})"
 
-        grouped[attribute].append(label)
+        grouped.setdefault(attribute, []).append(label)
 
-    html = '<div class="configuration-summary">'
-    html += '<strong>Configuration</strong>'
-    html += '<ul style="margin-top: 5px;">'
+    summary = ""
 
     for attribute, values in grouped.items():
-        html += f'<li><b>{attribute}</b>: {", ".join(values)}</li>'
+        summary += f"• {attribute}: {', '.join(values)}\n"
 
-    html += '</ul>'
-    html += '</div>'
-
-    return html
+    return summary.strip()
 
 
 # --------------------------------------------------
