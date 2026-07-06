@@ -8,7 +8,7 @@ import frappe.defaults
 from frappe import _, throw
 from frappe.contacts.doctype.address.address import get_address_display
 from frappe.contacts.doctype.contact.contact import get_contact_name
-from frappe.utils import cint, cstr, flt, get_fullname
+from frappe.utils import cint, cstr, flt, get_fullname, add_days, nowdate
 from frappe.utils.nestedset import get_root_of
 from webshop.utils import log
 
@@ -253,6 +253,9 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 
 	quotation = _get_cart_quotation()
 	log(f"quotation name={quotation.get("name")}")
+
+	quotation.valid_till = add_days(nowdate(), 14)
+	log(f"quotation valid_till={quotation.get("valid_till")}")
 
 	empty_card = False    
 	if qty == 0:
