@@ -81,5 +81,10 @@ jinja = {
     "methods": [
         "webshop.utils.parse_json",
         "webshop.utils.translate"
+    ],
+    "filters": [],
+    "globals": [
+        "webshop.utils.parse_json",
+        "webshop.utils.translate"
     ]
 }
