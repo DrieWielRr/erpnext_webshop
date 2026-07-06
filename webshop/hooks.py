@@ -79,6 +79,7 @@ has_website_permission = {
 
 jinja = {
     "methods": [
-        "webshop.utils.parse_json"
+        "webshop.utils.parse_json",
+        "webshop.utils.translate"
     ]
 }
