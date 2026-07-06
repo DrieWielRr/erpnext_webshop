@@ -77,14 +77,7 @@ has_website_permission = {
     "Item Group": "webshop.webshop.doctype.website_item.website_item.has_website_permission_for_item_group"
 }
 
-jinja = {
-    "methods": [
-        "webshop.utils.parse_json",
-        "webshop.utils.translate"
-    ],
-    "filters": [],
-    "globals": [
-        "webshop.utils.parse_json",
-        "webshop.utils.translate"
-    ]
+jinja_globals = {
+    "translate": "webshop.utils.translate",
+    "parse_json": "webshop.utils.parse_json"
 }
