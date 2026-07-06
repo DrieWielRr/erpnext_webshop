@@ -182,6 +182,50 @@ def get_cart_status(item_code):
         "qty": total_qty
     }
 
+def generate_configuration_summary(configuration):
+    if not configuration:
+        return ""
+
+    grouped = {}
+
+    for option in configuration:
+        attribute = option.get("attribute")
+        value = option.get("value")
+        price = flt(option.get("price", 0))
+
+        if not attribute:
+            continue
+
+        if attribute not in grouped:
+            grouped[attribute] = []
+
+        label = value
+
+        if price:
+            label += f" (+€{price:.2f})"
+
+        grouped[attribute].append(label)
+
+    html = """
+    <div class="configuration-summary">
+        <strong>Configuration</strong>
+        <ul>
+    """
+
+    for attribute, values in grouped.items():
+        html += f"""
+            <li>
+                <b>{attribute}</b>: {", ".join(values)}
+            </li>
+        """
+
+    html += """
+        </ul>
+    </div>
+    """
+
+    return html
+
 
 # --------------------------------------------------
 # CUSTOM UPDATE CART (v0.0.4)
@@ -207,9 +251,11 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 
 	item_configuration = json.loads(configuration or "[]") 
 	item_configuration = validate_config(item_configuration)
-	item_configuration = normalize_config(item_configuration)                
+	item_configuration = normalize_config(item_configuration)              
+	item_is_customized = bool(item_configuration)  
 	item_configuration_hash = generate_configuration_hash(item_configuration)
 	item_configuration_price = calculate_configuration_price(item_configuration)
+	item_configuration_summary = generate_configuration_summary(item_configuration)
     
 	log(f"item_configuration={item_configuration}")
 	log(f"item_configuration_hash={item_configuration_hash}")
@@ -295,8 +341,10 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
                     "qty": qty,
                     "additional_notes": additional_notes,
                     "warehouse": warehouse,
-                    "custom_config_hash": item_configuration_hash,                   # CUSTOM CODE
-                    "custom_item_configurations": json.dumps(item_configuration)    # CUSTOM CODE
+                    "custom_config_hash": item_configuration_hash,            
+                    "custom_item_configurations": json.dumps(item_configuration), 
+                    "custom_item_configurations_summary": item_configuration_summary,
+					"custom_customized": item_is_customized
                 },
             )
 		else:
