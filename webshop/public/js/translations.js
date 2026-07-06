@@ -1,17 +1,11 @@
 // translations.js
 
+let currentLang = document.documentElement.lang || "en";
 let translations = {};
-let currentLang =
-    frappe?.boot?.lang ||
-    document.documentElement.lang ||
-    "en";
 
-async function loadTranslations(lang = currentLang) {
-    const res = await fetch("./translations.json");
-    const data = await res.json();
-
-    translations = data;
-    currentLang = lang;
+async function loadTranslations() {
+    const res = await fetch("/assets/webshop/translations.json");
+    translations = await res.json();
 }
 
 function translate(key, capitalize = false, lang = currentLang) {
