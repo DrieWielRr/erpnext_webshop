@@ -42,14 +42,18 @@
 					<div class="item-subtitle mr-2">
 						{{ d.item_code }}
 					</div>
-					<div class="item-configurations"></div>	
+					<div class="item-configurations"></div>
 					{% set config_list = parse_json(d.custom_item_configurations) %}
-					{% for cfg in config_list %}
+					{% for attribute, configs in config_list|groupby('attribute') %}
 						<div class="item-subtitle text-muted">
-							<strong>{{ _(cfg.attribute) }}</strong>:{{ _(cfg.value) }}
-							{% if cfg.price and cfg.price > 0 %}
-								(+€{{ "%.2f"|format(cfg.price|float) }})
-							{% endif %}
+							<strong>{{ _(attribute) }}</strong>: 
+							{{ configs|map(attribute='value')|map('translate')|join(', ') }}
+
+							{% for cfg in configs %}
+								{% if cfg.price and cfg.price > 0 %}
+									(+€{{ "%.2f"|format(cfg.price|float) }})
+								{% endif %}
+							{% endfor %}
 						</div>
 					{% endfor %}
 
