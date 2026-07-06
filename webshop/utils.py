@@ -41,12 +41,21 @@ def queue_translation_export(doc, method=None):
         "webshop.utils.translation_export",
         lang=lang,
         queue="short",
-        timeout=300
+        timeout=300,
+        enqueue_after_commit=True
     )
-    log(f"queuing rebuild for {lang}")
+    log(f"queuing rebuild for {lang}, logs in queue-short container")
 
 
 def translation_export(lang):
+    frappe.log_error(
+        title="Translation Worker Debug",
+        message=(
+            f"file={__file__}\n"
+            f"debug={frappe.conf.get('enable_debug')}"
+        )
+    )
+
     dirty_key = f"translation_dirty:{lang}"
     job_key = f"translation_job_scheduled:{lang}"
 
@@ -92,8 +101,10 @@ def translation_export(lang):
 
     log(f"[translation_export] Writing file: {file_path}")
     try:
-        with open(file_path, "w", encoding="utf-8") as f:
+        temp_path = file_path + ".tmp"
+        with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(temp_path, file_path)
 
     except Exception:
         log(f"[translation_export] FAILED writing {file_path}")

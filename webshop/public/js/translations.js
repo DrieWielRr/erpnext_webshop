@@ -1,38 +1,56 @@
-// translations.js
-
-let currentLang = document.documentElement.lang || "en";
+let currentLang = (document.documentElement.lang || "en").toLowerCase();
 let translations = {};
+let fallbackTranslations = {};
 
 async function loadTranslations() {
-    const res = await fetch("/assets/webshop/js/translations.json");
-    translations = await res.json();
+    try {
+        const [langRes, enRes] = await Promise.all([
+            fetch(`/files/${currentLang}_translations.json`),
+            fetch(`/files/en_translations.json`)
+        ]);
+
+        translations = await langRes.json();
+        fallbackTranslations = await enRes.json();
+
+        console.log(
+            `[translations] loaded ${currentLang}: ${Object.keys(translations).length} entries`
+        );
+
+    } catch (err) {
+        console.error("[translations] failed loading:", err);
+
+        translations = {};
+        fallbackTranslations = {};
+    }
 }
 
-function translate(key, capitalize = false, lang = currentLang) {
+function translate(key, capitalize = false) {
     if (!key) return key;
 
-    const lookupKey = String(key).toLowerCase().trim();
+    const original = String(key);
+    const lookupKey = original.toLowerCase().trim();
 
-    const dictLang = translations[lang] || translations.en || {};
-    const dictEn = translations.en || {};
-
-    const translated = dictLang[lookupKey] || dictEn[lookupKey] || key;
+    let translated =
+        translations[lookupKey] ||
+        fallbackTranslations[lookupKey] ||
+        original;
 
     if (capitalize) {
         const startsWithCapital =
-            key.charAt(0) === key.charAt(0).toUpperCase() &&
-            key.charAt(0) !== key.charAt(0).toLowerCase();
+            original.charAt(0) === original.charAt(0).toUpperCase() &&
+            original.charAt(0) !== original.charAt(0).toLowerCase();
 
         if (startsWithCapital) {
-            return translated.charAt(0).toUpperCase() + translated.slice(1);
+            translated =
+                translated.charAt(0).toUpperCase() +
+                translated.slice(1);
         } else {
-            return translated.toLowerCase();
+            translated = translated.toLowerCase();
         }
     }
 
     return translated;
 }
 
-// expose globally
 window.translate = translate;
 window.loadTranslations = loadTranslations;
