@@ -70,6 +70,11 @@ doc_events = {
             "webshop.webshop.crud_events.tax_rule.validate_use_for_cart.execute",
         ],
     },
+    "Translation": {
+        "after_insert": ["webshop.utils.queue_translation_export"],
+        "on_update": ["webshop.utils.queue_translation_export"],
+        "on_trash": ["webshop.utils.queue_translation_export"]
+    }
 }
 
 has_website_permission = {
