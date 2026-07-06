@@ -144,7 +144,7 @@
 			log("[UpdatePricing] calling frappe");
 			frappe.call({
 				// Fetch Cart Status
-				method: "webshop.shopping_cart.cart.get_cart_status",
+				method: "webshop.webshop.shopping_cart.cart.get_cart_status",
 				args: { item_code: "{{ doc.item_code }}" },
 				callback: function(r) {
 					if (r.message) {
