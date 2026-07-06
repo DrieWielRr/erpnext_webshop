@@ -160,7 +160,7 @@ $.extend(shopping_cart, {
 			with_items: 1,
 			configuration: configuration,
 			btn: this,
-			callback: function(r) {
+			callback: function(r) {				
 				if(!r.exc) {
 					$(".cart-items").html(r.message.items);
 					$(".cart-tax-items").html(r.message.total);
