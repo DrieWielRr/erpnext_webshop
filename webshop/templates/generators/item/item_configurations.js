@@ -1,5 +1,30 @@
 class ItemConfigurations {
 
+    static injectConfiguratorStyles() {
+		log("[ItemConfigurations] injectConfiguratorStyles started");        
+        const style_id = "item_configurator.style";
+        if (document.querySelector(`#${style_id}`)) return;
+
+        const style = document.createElement("style");
+        style.id = style_id;
+        style.innerHTML = `
+            .config-attribute { margin-bottom: 12px; }
+            .input-row { position: relative; display: flex; align-items: center; }
+            .config-label { display: block; margin-bottom: 0px; font-weight: 500; }
+            .combo { position: relative; width: 75%; }
+            .combo-input { width: 100%; padding-right: 30px; box-sizing: border-box; }
+            .combo-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; display: none; }
+            .combo-dropdown { position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; z-index: 9999; display: none; }
+            .combo-item { padding: 6px; cursor: pointer; }
+            .combo-item:hover { background: #f2f2f2; }
+            .tag-box { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+            .tag { background: #eee; padding: 4px 8px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+            .combo-clear:hover { color: #333; }
+        `;
+        document.head.appendChild(style);
+		log("[ItemConfigurations] injectConfiguratorStyles completed");        
+    }
+
     static buildConfigurator(data, root) {
         log("[ItemConfigurations] buildConfigurator started", data);
         
