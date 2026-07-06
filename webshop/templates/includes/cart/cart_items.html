@@ -51,7 +51,7 @@
 					{% set config_list = parse_json(d.custom_item_configurations) %}
 					{% for cfg in config_list %}
 						<div class="item-subtitle text-muted">
-							<strong>{{ translate(cfg.attribute) }}</strong>: {{ translate(cfg.value) }}
+							<strong>{{ webshop.utils.translate(cfg.attribute) }}</strong>:{{ webshop.utils.translate(cfg.value) }}
 							{% if cfg.price and cfg.price > 0 %}
 								(+€{{ "%.2f"|format(cfg.price|float) }})
 							{% endif %}
