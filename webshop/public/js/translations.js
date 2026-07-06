@@ -6,7 +6,7 @@ async function loadTranslations() {
     try {
         const [langRes, enRes] = await Promise.all([
             fetch(`/translations/${currentLang}.json`),
-            fetch(`/translations/eng.json`)
+            fetch(`/translations/en.json`)
         ]);
 
         translations = await langRes.json();
