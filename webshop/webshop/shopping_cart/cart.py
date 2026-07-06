@@ -26,17 +26,6 @@ except ImportError:
 class WebsitePriceListMissingError(frappe.ValidationError):
     pass
 
-
-# DEBUG
-# --------------------------------------------------
-ENABLE_DEBUG = 1
-
-def log(msg):
-    if ENABLE_DEBUG:
-        print(f"[CART DEBUG] {msg}", flush=True)
-# --------------------------------------------------
-
-
 # EXTRA CUSTOM FUNCTIONS
 # --------------------------------------------------
 def normalize_config(config):

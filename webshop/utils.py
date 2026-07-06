@@ -1,5 +1,14 @@
+import inspect
 import frappe
 import json
+
+def log(msg):
+    if frappe.conf.get("enable_debug"):
+        frame = inspect.currentframe().f_back
+        func_name = frame.f_code.co_name
+        module_name = frame.f_globals.get("__name__", "unknown")
+        print(f"[{module_name}.{func_name}] {msg}", flush=True)
+
 
 def parse_json(json_string):
     if not json_string:
@@ -34,7 +43,7 @@ def queue_translation_export(doc, method=None):
         queue="short",
         timeout=300
     )
-    frappe.logger().info(f"[queue_translation_export] queuing rebuild for {lang}")
+    log(f"[queue_translation_export] queuing rebuild for {lang}")
 
 def translation_export(lang):
     dirty_key = f"translation_dirty:{lang}"
@@ -69,4 +78,4 @@ def translation_export(lang):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    frappe.logger().info(f"[translation_export] rebuilt {lang}")
+    log(f"[translation_export] rebuilt {lang}")
