@@ -1,111 +1,34 @@
 // translations.js
 
+let translations = {};
+let currentLang =
+    frappe?.boot?.lang ||
+    document.documentElement.lang ||
+    "en";
 
-// Make the language and text selection globally available within this module
-//////////////////////////////////////////////////////////////////////////////////////////
-const lang = frappe?.boot?.lang || document.documentElement.lang || "en";
+async function loadTranslations(lang = currentLang) {
+    const res = await fetch("./translations.json");
+    const data = await res.json();
 
-const dict = {
-    nl: {
-        navbar: "Zoeken...",
-        products: "Zoek producten",
-        emptycart: "Geen producten gevonden",
-        wishes: "Selecteer of typ uw wensen:",
-        selectupto: "Selecteer maximaal",
-        welcomemsg: "welkom in uw persoonlijke klantomgeving",
-        item: "artikel",
-        items: "artikelen",
-        color: "kleur",
-        select: "selecteer",
-        theme: "thema",
-        'you can only select': "U kunt maximaal",
-        'items for': "configuraties selecteren voor",
-        'net total': "netto totaal",
-        'minqty': "v.a.",
-        
-        // Colors	
-        red: "rood",
-        blue: "blauw",
-        green: "groen",
-        yellow: "geel",
-        black: "zwart",
-        white: "wit",
-        orange: "oranje",
-        purple: "paars",
-        pink: "roze",
-        brown: "bruin",
-        grey: "grijs",
-        gray: "grijs",
-        gold: "goud",
-        silver: "zilver",
-        beige: "beige",
-        navy: "marineblauw",
-        turquoise: "turkoois",
-        maroon: "kastanjebruin",
-        teal: "zwartblauw",
-        lime: "lichtgroen",
-        violet: "violet",
-        indigo: "indigo",
-        magenta: "magenta",
-        cyan: "cyaan",
-        olive: "olijfgroen"
-    },
-    en: {
-        navbar: "Search...",
-        products: "Search for Products",
-        emptycart: "No products found",
-        wishes: "Select or type your wishes:",
-        selectupto: "Select up to",
-        welcomemsg: "welcome to your customer portal",
-        items: "items",
-        color: "color",
-        select: "select",
-        theme: "theme",
-        'you can only select': "You can only select",
-        'items for': "items for",
-		'minqty': "min qty",
+    translations = data;
+    currentLang = lang;
+}
 
-        // Colors
-        red: "red",
-        blue: "blue",
-        green: "green",
-        yellow: "yellow",
-        black: "black",
-        white: "white",
-        orange: "orange",
-        purple: "purple",
-        pink: "pink",
-        brown: "brown",
-        grey: "grey",
-        gray: "gray",
-        gold: "gold",
-        silver: "silver",
-        beige: "beige",
-        navy: "navy",
-        turquoise: "turquoise",
-        maroon: "maroon",
-        teal: "teal",
-        lime: "lime",
-        violet: "violet",
-        indigo: "indigo",
-        magenta: "magenta",
-        cyan: "cyan",
-        olive: "olive"
-    }
-};
-
-
-const texts = dict[lang] || dict.en;
-//////////////////////////////////////////////////////////////////////////////////////////
-
-function translate(key, capitalize = false) {
+function translate(key, capitalize = false, lang = currentLang) {
     if (!key) return key;
+
     const lookupKey = String(key).toLowerCase().trim();
-    const translated = texts[lookupKey] || dict.en[lookupKey] || key;
+
+    const dictLang = translations[lang] || translations.en || {};
+    const dictEn = translations.en || {};
+
+    const translated = dictLang[lookupKey] || dictEn[lookupKey] || key;
 
     if (capitalize) {
-        const startsWithCapital = key.charAt(0) === key.charAt(0).toUpperCase() && key.charAt(0) !== key.charAt(0).toLowerCase();
-        
+        const startsWithCapital =
+            key.charAt(0) === key.charAt(0).toUpperCase() &&
+            key.charAt(0) !== key.charAt(0).toLowerCase();
+
         if (startsWithCapital) {
             return translated.charAt(0).toUpperCase() + translated.slice(1);
         } else {
@@ -116,5 +39,6 @@ function translate(key, capitalize = false) {
     return translated;
 }
 
-// Bind it to window so your other layout scripts can call translate() anywhere
+// expose globally
 window.translate = translate;
+window.loadTranslations = loadTranslations;
