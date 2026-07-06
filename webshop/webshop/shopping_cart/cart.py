@@ -206,23 +206,15 @@ def generate_configuration_summary(configuration):
 
         grouped[attribute].append(label)
 
-    html = """
-    <div class="configuration-summary">
-        <strong>Configuration</strong>
-        <ul>
-    """
+    html = '<div class="configuration-summary">'
+    html += '<strong>Configuration</strong>'
+    html += '<ul style="margin-top: 5px;">'
 
     for attribute, values in grouped.items():
-        html += f"""
-            <li>
-                <b>{attribute}</b>: {", ".join(values)}
-            </li>
-        """
+        html += f'<li><b>{attribute}</b>: {", ".join(values)}</li>'
 
-    html += """
-        </ul>
-    </div>
-    """
+    html += '</ul>'
+    html += '</div>'
 
     return html
 
