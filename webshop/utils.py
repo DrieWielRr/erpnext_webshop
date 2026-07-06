@@ -94,10 +94,14 @@ def translation_export(lang):
     }
 
     log(f"[translation_export] Prepared {len(data)} JSON entries for {lang}")
-    file_path = frappe.get_site_path(
+    translation_dir = frappe.get_site_path(
         "public",
-        "files",
-        f"{lang}_translations.json"
+        "translations"
+    )
+    os.makedirs(translation_dir, exist_ok=True)
+    file_path = os.path.join(
+        translation_dir,
+        f"{lang}.json"
     )
 
     log(f"[translation_export] Writing file: {file_path}")

@@ -5,8 +5,7 @@ let fallbackTranslations = {};
 async function loadTranslations() {
     try {
         const [langRes, enRes] = await Promise.all([
-            fetch(`/files/${currentLang}_translations.json`),
-            fetch(`/files/en_translations.json`)
+            fetch(`/translations/${currentLang}.json`)
         ]);
 
         translations = await langRes.json();
