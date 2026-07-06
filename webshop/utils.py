@@ -43,39 +43,64 @@ def queue_translation_export(doc, method=None):
         queue="short",
         timeout=300
     )
-    log(f"[queue_translation_export] queuing rebuild for {lang}")
+    log(f"queuing rebuild for {lang}")
+
 
 def translation_export(lang):
     dirty_key = f"translation_dirty:{lang}"
     job_key = f"translation_job_scheduled:{lang}"
 
+    log(f"[translation_export] START lang={lang}")
+
     # clear scheduled flag
+    job_flag = frappe.cache().get_value(job_key)
+    log(f"[translation_export] job_key={job_key} before_delete={job_flag}")
+
     frappe.cache().delete_value(job_key)
 
+    dirty_flag = frappe.cache().get_value(dirty_key)
+    log(f"[translation_export] dirty_key={dirty_key} value={dirty_flag}")
+
     # if nothing changed → exit
-    if not frappe.cache().get_value(dirty_key):
+    if not dirty_flag:
+        log(f"[translation_export] SKIPPED no dirty flag for {lang}")
         return
 
     frappe.cache().delete_value(dirty_key)
+    log(f"[translation_export] Dirty flag cleared for {lang}")
 
+    log(f"[translation_export] Fetching translations for {lang}")
     rows = frappe.db.get_all(
         "Translation",
         filters={"language": lang},
         fields=["source_text", "translated_text"]
     )
 
+    log(f"[translation_export] Found {len(rows)} translation rows for {lang}")
     data = {
         r.source_text.lower().strip(): r.translated_text
-        for r in rows if r.translated_text
+        for r in rows
+        if r.translated_text
     }
 
+    log(f"[translation_export] Prepared {len(data)} JSON entries for {lang}")
     file_path = frappe.get_site_path(
         "public",
         "files",
         f"{lang}_translations.json"
     )
 
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    log(f"[translation_export] Writing file: {file_path}")
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
-    log(f"[translation_export] rebuilt {lang}")
+    except Exception:
+        log(f"[translation_export] FAILED writing {file_path}")
+        frappe.log_error(
+            title="Translation Export Failed",
+            message=frappe.get_traceback()
+        )
+        raise
+
+    log(f"[translation_export] COMPLETED lang={lang} entries={len(data)}")
