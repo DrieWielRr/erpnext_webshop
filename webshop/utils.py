@@ -34,6 +34,7 @@ def queue_translation_export(doc, method=None):
         queue="short",
         timeout=300
     )
+    frappe.logger().info(f"[queue_translation_export] queuing rebuild for {lang}")
 
 def translation_export(lang):
     dirty_key = f"translation_dirty:{lang}"
