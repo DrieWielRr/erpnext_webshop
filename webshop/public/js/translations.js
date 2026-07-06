@@ -4,7 +4,7 @@ let currentLang = document.documentElement.lang || "en";
 let translations = {};
 
 async function loadTranslations() {
-    const res = await fetch("/assets/webshop/translations.json");
+    const res = await fetch("/assets/webshop/js/translations.json");
     translations = await res.json();
 }
 
