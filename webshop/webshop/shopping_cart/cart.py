@@ -3,6 +3,7 @@
 
 import json
 import hashlib
+import copy
 import frappe
 import frappe.defaults
 from frappe import _, throw
@@ -81,6 +82,20 @@ def validate_config(config):
 
     return config
 
+def normalize_configuration_for_hash(configuration):
+    """
+    Removes volatile fields from configuration.
+    Hash represents the selected options, not their prices.
+    """
+
+    return [
+        {
+            "id": c.get("id"),
+            "attribute": c.get("attribute"),
+            "value": c.get("value"),
+        }
+        for c in configuration
+    ]
 
 def generate_configuration_hash(configuration):
     """
@@ -115,16 +130,20 @@ def get_attribute_price_map(attribute_name):
 
     return result
 
-def calculate_configuration_price(configuration):
+def rebuild_configuration_from_server(configuration, item_name=None):
     """
-    Takes parsed configuration list and returns total extra price.
-    Server is source of truth for attribute pricing.
+    Server is the source of truth.
+
+    - Validates attribute/value combinations
+    - Replaces client prices
+    - Returns updated configuration and total price
     """
 
     if not configuration:
-        return 0.0
+        return [], 0.0
 
     total_extra = 0.0
+    updated_configuration = []
 
     for c in configuration:
 
@@ -132,23 +151,34 @@ def calculate_configuration_price(configuration):
         attribute_name = c.get("attribute")
         value = c.get("value")
 
-        if not attribute_name or not value:
-            frappe.throw("Invalid configuration entry (missing attribute/value)")
-
-        price_map = get_attribute_price_map(attribute_id)
-        log(f"attribute_id: {attribute_id}, attribute_name: {attribute_name}, value: {value}")
-        log(f"price_map: {price_map}")
-
-        if value not in price_map:
+        if not attribute_id or not attribute_name or not value:
             frappe.throw(
-                f"Invalid value '{value}' for attribute '{attribute_name}'"
+                "Invalid configuration entry"
             )
 
+        price_map = get_attribute_price_map(attribute_id)
+
+        if value not in price_map:
+            frappe.msgprint(
+                f"Configuration removed because '{attribute_name}: {value}' "
+                f"is no longer available for {item_name or 'this item'}.",
+                alert=True
+            )
+
+            return None, None
+
         server_price = price_map[value]
-        client_price = float(c.get("price") or 0)
+
+        updated_configuration.append({
+            "id": attribute_id,
+            "attribute": attribute_name,
+            "value": value,
+            "price": server_price,
+        })
+
         total_extra += server_price
 
-    return total_extra
+    return updated_configuration, total_extra
 
 
 @frappe.whitelist()
@@ -231,126 +261,174 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 
 	item_configuration = json.loads(configuration or "[]") 
 	item_configuration = validate_config(item_configuration)
-	item_configuration = normalize_config(item_configuration)              
-	item_is_customized = bool(item_configuration)  
-	item_configuration_hash = generate_configuration_hash(item_configuration)
-	item_configuration_price = calculate_configuration_price(item_configuration)
-	item_configuration_summary = generate_configuration_summary(item_configuration)
-    
-	log(f"item_configuration={item_configuration}")
-	log(f"item_configuration_hash={item_configuration_hash}")
-	log(f"item_configuration_price={item_configuration_price}")
+	item_configuration = normalize_config(item_configuration)
+	item_configuration_original = copy.deepcopy(item_configuration)
+	item_configuration_original_hash = generate_configuration_hash(
+		normalize_configuration_for_hash(item_configuration_original)
+	)
+	item_configuration, item_configuration_price = (
+		rebuild_configuration_from_server(
+			item_configuration,
+			item_code
+		)
+	)
 
-    # Force qty to float immediately to ensure all numerical comparisons are safe
-	qty = flt(qty)
+	# configuration no longer exists
+	if item_configuration is None:
+		valid_configuration = False
+	else:
+		valid_configuration = True
 
 	quotation = _get_cart_quotation()
-	log(f"quotation name={quotation.get("name")}")
+	if valid_configuration:
+		item_is_customized = bool(item_configuration)
+		item_configuration_hash = generate_configuration_hash(
+			normalize_configuration_for_hash(item_configuration)
+		)
+		item_configuration_summary = generate_configuration_summary(
+			item_configuration
+		)
+		item_configuration_summary = generate_configuration_summary(item_configuration)
+		
+		log(f"item_configuration={item_configuration}")
+		log(f"item_configuration_hash={item_configuration_hash}")
+		log(f"item_configuration_price={item_configuration_price}")
 
-	quotation.valid_till = add_days(nowdate(), 14)
-	log(f"quotation valid_till={quotation.get("valid_till")}")
+		# Force qty to float immediately to ensure all numerical comparisons are safe
+		qty = flt(qty)
+		
+		log(f"quotation name={quotation.get("name")}")
+		quotation.valid_till = add_days(nowdate(), 14)
+		log(f"quotation valid_till={quotation.get("valid_till")}")
 
-	empty_card = False    
-	if qty == 0:
+		empty_card = False    
+		if qty == 0:
+			quotation_items = [
+				d for d in quotation.items
+				if d.item_code == item_code
+				and d.custom_config_hash != item_configuration_hash
+			]
+			if quotation_items:
+				quotation.set("items", quotation_items)
+			else:
+				empty_card = True
+
+		else:
+			warehouse = frappe.get_cached_value(
+				"Website Item", {"item_code": item_code}, "website_warehouse"
+			)
+			
+			quotation_items_all = [
+				d for d in quotation.items
+				if d.item_code == item_code
+			]
+			quotation_items = [
+				d for d in quotation.items
+				if d.item_code == item_code
+				and d.custom_config_hash == item_configuration_hash
+			]        
+			
+			# ENFORCE MINIMUM PURCHASE QUANTITY)
+			########################################################################
+			try:
+				# Fetch the total items based on item_code            
+				total_items = sum(flt(d.qty) for d in quotation_items_all)
+				log(f"[MIN_QTY CHECK] total_items: {total_items} (Type: {type(total_items).__name__})")
+				
+				# Fetch the threshold from the Item Price record
+				min_qty_record = frappe.db.get_value(
+					"Item Price",
+					{"item_code": item_code, "price_list": "Standard Selling"}, 
+					"custom_initial_quantity"
+				)            
+				log(f"[MIN_QTY CHECK] Database returned: {min_qty_record} (Type: {type(min_qty_record).__name__})")
+				
+				if min_qty_record is not None:
+					min_qty = int(float(min_qty_record)) # Safe cast from float/string to int
+					
+			except Exception as e:
+				log(f"[MIN_QTY ERROR] Failed to fetch or parse custom_initial_quantity: {str(e)}")
+				min_qty = 1
+				
+			# Force the input qty up to the minimum threshold if it falls below it
+			if total_items <= min_qty and qty < min_qty:
+				log(f"[MIN_QTY CHECK] CRITICAL: User ordered {qty}, but minimum is {min_qty}. Overriding qty.")
+				qty = flt(min_qty)
+			else:
+				log(f"[MIN_QTY CHECK] Quantity {qty} is valid (Minimum is {min_qty}).")   
+			########################################################################
+			
+			if not quotation_items:
+				log(f"appending item to quotation:")
+				log(f"doctype=doctype")
+				log(f"item_code={item_code}")
+				log(f"qty={qty}")
+				log(f"additional_notes={additional_notes}")
+				log(f"warehouse={warehouse}")
+				log(f"custom_config_hash={item_configuration_hash}")
+				log(f"custom_item_configurations={json.dumps(item_configuration)}")            
+				quotation.append(
+					"items",
+					{
+						"doctype": "Quotation Item",
+						"item_code": item_code,
+						"qty": qty,
+						"additional_notes": additional_notes,
+						"warehouse": warehouse,
+						"custom_config_hash": item_configuration_hash,            
+						"custom_item_configurations": json.dumps(item_configuration), 
+						"custom_item_configurations_summary": item_configuration_summary,
+						"custom_customized": item_is_customized
+					},
+				)
+			else:
+				log(f"Updating quotation items")
+				log(f"qty={qty}")
+				log(f"warehouse={warehouse}")
+				log(f"additional_notes={additional_notes}")
+				quotation_items[0].qty = (flt(quotation_items[0].qty) + 1) if is_add_to_cart else flt(qty)
+				quotation_items[0].warehouse = warehouse
+				quotation_items[0].additional_notes = additional_notes
+	else:
+		quotation_items_all = [
+			d for d in quotation.items
+			if d.item_code == item_code
+		]
 		quotation_items = [
-            d for d in quotation.items
-            if d.item_code == item_code
-            and d.custom_config_hash != item_configuration_hash
-        ]
+			d for d in quotation.items
+			if d.item_code == item_code
+			and d.custom_config_hash == item_configuration_original_hash
+		]     
+
+		if quotation_items:
+			quotation.remove(quotation_items[0])
+		frappe.msgprint(
+            f"{item_code} removed from cart because the configuration is no longer valid."
+        )
+
+		quotation_items = [
+			d for d in quotation.items
+			if d.item_code == item_code
+			and d.custom_config_hash != item_configuration_original_hash
+		]
 		if quotation_items:
 			quotation.set("items", quotation_items)
 		else:
 			empty_card = True
 
-	else:
-		warehouse = frappe.get_cached_value(
-			"Website Item", {"item_code": item_code}, "website_warehouse"
-		)
-        
-		quotation_items_all = [
-            d for d in quotation.items
-            if d.item_code == item_code
-        ]
-		quotation_items = [
-            d for d in quotation.items
-            if d.item_code == item_code
-            and d.custom_config_hash == item_configuration_hash
-        ]        
-        
-        # ENFORCE MINIMUM PURCHASE QUANTITY)
-        ########################################################################
-		try:
-            # Fetch the total items based on item_code            
-			total_items = sum(flt(d.qty) for d in quotation_items_all)
-			log(f"[MIN_QTY CHECK] total_items: {total_items} (Type: {type(total_items).__name__})")
-            
-            # Fetch the threshold from the Item Price record
-			min_qty_record = frappe.db.get_value(
-                "Item Price",
-                {"item_code": item_code, "price_list": "Standard Selling"}, 
-                "custom_initial_quantity"
-            )            
-			log(f"[MIN_QTY CHECK] Database returned: {min_qty_record} (Type: {type(min_qty_record).__name__})")
-            
-			if min_qty_record is not None:
-				min_qty = int(float(min_qty_record)) # Safe cast from float/string to int
-                
-		except Exception as e:
-			log(f"[MIN_QTY ERROR] Failed to fetch or parse custom_initial_quantity: {str(e)}")
-			min_qty = 1
-            
-        # Force the input qty up to the minimum threshold if it falls below it
-		if total_items <= min_qty and qty < min_qty:
-			log(f"[MIN_QTY CHECK] CRITICAL: User ordered {qty}, but minimum is {min_qty}. Overriding qty.")
-			qty = flt(min_qty)
-		else:
-			log(f"[MIN_QTY CHECK] Quantity {qty} is valid (Minimum is {min_qty}).")   
-        ########################################################################
-        
-		if not quotation_items:
-			log(f"appending item to quotation:")
-			log(f"doctype=doctype")
-			log(f"item_code={item_code}")
-			log(f"qty={qty}")
-			log(f"additional_notes={additional_notes}")
-			log(f"warehouse={warehouse}")
-			log(f"custom_config_hash={item_configuration_hash}")
-			log(f"custom_item_configurations={json.dumps(item_configuration)}")            
-			quotation.append(
-                "items",
-                {
-                    "doctype": "Quotation Item",
-                    "item_code": item_code,
-                    "qty": qty,
-                    "additional_notes": additional_notes,
-                    "warehouse": warehouse,
-                    "custom_config_hash": item_configuration_hash,            
-                    "custom_item_configurations": json.dumps(item_configuration), 
-                    "custom_item_configurations_summary": item_configuration_summary,
-					"custom_customized": item_is_customized
-                },
-            )
-		else:
-			log(f"Updating quotation items")
-			log(f"qty={qty}")
-			log(f"warehouse={warehouse}")
-			log(f"additional_notes={additional_notes}")
-			quotation_items[0].qty = (flt(quotation_items[0].qty) + 1) if is_add_to_cart else flt(qty)
-			quotation_items[0].warehouse = warehouse
-			quotation_items[0].additional_notes = additional_notes
-
 	log(f"Applying cart settings")
 	apply_cart_settings(quotation=quotation)
   
-	if not quotation_items:
-		for item in quotation.items:
-			if item.item_code == item_code and item.custom_config_hash == item_configuration_hash:
-				base_rate = item.rate
-				log(f"base_rate={base_rate}")
-				item.rate = base_rate + item_configuration_price
-				log(f"Updated item.rate={item.rate}")
-				item.amount = item.rate * item.qty
-				log(f"Updated item.amount={item.amount}")
+	if valid_configuration:
+		if not quotation_items:
+			for item in quotation.items:
+				if item.item_code == item_code and item.custom_config_hash == item_configuration_hash:
+					base_rate = item.rate
+					log(f"base_rate={base_rate}")
+					item.rate = base_rate + item_configuration_price
+					log(f"Updated item.rate={item.rate}")
+					item.amount = item.rate * item.qty
+					log(f"Updated item.amount={item.amount}")
 
 	quotation.flags.ignore_permissions = True
 	quotation.payment_schedule = []
