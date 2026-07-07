@@ -146,13 +146,6 @@ def calculate_configuration_price(configuration):
 
         server_price = price_map[value]
         client_price = float(c.get("price") or 0)
-
-        if client_price != server_price:
-            frappe.throw(
-                f"Price mismatch for {attribute_name} ({value}). "
-                f"Server={server_price}, Client={client_price}"
-            )
-
         total_extra += server_price
 
     return total_extra
