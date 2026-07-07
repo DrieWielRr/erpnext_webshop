@@ -14,7 +14,7 @@ import json
 import requests
 
 import frappe
-from frappe.utils import flt
+from frappe.utils import cint, flt
 from webshop.utils import log
 
 # --------------------------------------------------------------------
@@ -285,3 +285,114 @@ def update_delivery_distance(doc, method=None):
 
     log("=== UPDATE DELIVERY DISTANCE END ===")
     return distance
+
+
+
+
+@frappe.whitelist()
+def update_shipping(quotation, include_shipping):
+    doc = frappe.get_doc("Quotation", quotation)
+
+    doc.custom_include_shipping = cint(include_shipping)
+    log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}")
+
+    shipping_cost = 0
+    distance = 0
+    warning = None
+
+    if doc.custom_include_shipping:
+
+        if doc.shipping_address_name:
+            log(f"Using shipping address: {doc.shipping_address_name}")
+
+            address = frappe.get_doc("Address", doc.shipping_address_name)
+            distance = flt(address.custom_delivery_distance_km or 0)
+
+            log(
+                f"Loaded {address.name}.custom_delivery_distance_km "
+                f"(distance: {distance} km)"
+            )
+        else:
+            log(f"Quotation {doc.name} has no shipping address selected.")
+
+        doc.custom_delivery_distance_km = distance
+
+        log(
+            f"Updated {doc.name}.custom_delivery_distance_km "
+            f"(distance: {distance} km)"
+        )
+
+        if doc.shipping_address_name and distance == 0:
+            warning = _("Shipping calculation failed. Please check the shipping address.")
+            log(warning)
+
+        else:
+            shipping_rule = frappe.get_doc(
+                "Shipping Rule",
+                "Shipping (per KM)"
+            )
+
+            price_per_km = flt(shipping_rule.shipping_amount)
+            shipping_cost = distance * price_per_km
+
+            log(
+                f"Shipping rule '{shipping_rule.name}': "
+                f"€{price_per_km}/km × {distance} km = €{shipping_cost}"
+            )
+
+    doc.custom_shipping_fee = shipping_cost
+    doc.grand_total = doc.grand_total + shipping_cost
+
+    log(f"Updating shipping charge")
+    update_shipping_charge(doc, shipping_cost)
+
+    log(f"Re-calculate taxes and totals")
+    doc.calculate_taxes_and_totals()
+    doc.save()
+
+    log(
+        f"Saved quotation {doc.name} "
+        f"(include_shipping={doc.custom_include_shipping}, "
+        f"distance={distance} km, shipping_fee={shipping_cost})"
+    )
+
+    return {
+        "grand_total": doc.grand_total,
+        "shipping_fee": shipping_cost,
+        "warning": warning
+    }
+
+
+def update_shipping_charge(doc, shipping_cost):
+    shipping_description = "Shipping"
+
+    # Find existing shipping row
+    shipping_row = None
+    for row in doc.taxes:
+        if row.description == shipping_description:
+            shipping_row = row
+            break
+
+    if shipping_cost > 0:
+        if not shipping_row:
+            shipping_row = doc.append("taxes", {})
+
+        shipping_row.charge_type = "Actual"
+        shipping_row.description = shipping_description
+        shipping_row.tax_amount = flt(shipping_cost)
+        shipping_row.account_head = "Shipping Income - YourCompany"
+        shipping_row.cost_center = doc.cost_center
+
+        log(
+            f"Updated shipping charge row: "
+            f"{shipping_cost}"
+        )
+
+    else:
+        # Remove shipping row if shipping is disabled
+        doc.taxes = [
+            row for row in doc.taxes
+            if row.description != shipping_description
+        ]
+
+        log("Removed shipping charge row")
