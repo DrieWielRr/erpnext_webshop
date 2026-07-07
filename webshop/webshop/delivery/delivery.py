@@ -79,6 +79,45 @@ def set_coordinates(address, latitude, longitude):
         }]
     })
 
+def update_shipping_charge(doc, shipping_cost, shipping_rule):
+    shipping_description = (
+        getattr(shipping_rule, "label", None)
+        or shipping_rule.name
+    )
+
+    shipping_row = None
+    for row in doc.taxes:
+        if row.description == shipping_description:
+            shipping_row = row
+            break
+
+    if shipping_cost > 0:
+        if not shipping_row:
+            shipping_row = doc.append("taxes", {})
+
+        shipping_row.charge_type = "Actual"
+        shipping_row.description = shipping_description
+        shipping_row.tax_amount = flt(shipping_cost)
+
+        # Use Shipping Rule configuration
+        shipping_row.account_head = shipping_rule.account
+
+        if shipping_rule.cost_center:
+            shipping_row.cost_center = shipping_rule.cost_center
+
+        log(
+            f"Updated shipping charge row: "
+            f"{shipping_cost} using rule {shipping_rule.name}"
+        )
+
+    else:
+        doc.taxes = [
+            row for row in doc.taxes
+            if row.description != shipping_description
+        ]
+
+        log("Removed shipping charge row")
+
 # --------------------------------------------------------------------
 # SHOP ADDRESS
 # --------------------------------------------------------------------
@@ -361,43 +400,3 @@ def update_shipping(quotation, include_shipping):
     }
 
 
-def update_shipping_charge(doc, shipping_cost, shipping_rule):
-    log(shipping_rule.as_dict())
-
-    shipping_description = (
-        getattr(shipping_rule, "description", None)
-        or shipping_rule.name
-    )
-
-    shipping_row = None
-    for row in doc.taxes:
-        if row.description == shipping_description:
-            shipping_row = row
-            break
-
-    if shipping_cost > 0:
-        if not shipping_row:
-            shipping_row = doc.append("taxes", {})
-
-        shipping_row.charge_type = "Actual"
-        shipping_row.description = shipping_description
-        shipping_row.tax_amount = flt(shipping_cost)
-
-        # Use Shipping Rule configuration
-        shipping_row.account_head = shipping_rule.account_head
-
-        if shipping_rule.cost_center:
-            shipping_row.cost_center = shipping_rule.cost_center
-
-        log(
-            f"Updated shipping charge row: "
-            f"{shipping_cost} using rule {shipping_rule.name}"
-        )
-
-    else:
-        doc.taxes = [
-            row for row in doc.taxes
-            if row.description != shipping_description
-        ]
-
-        log("Removed shipping charge row")
