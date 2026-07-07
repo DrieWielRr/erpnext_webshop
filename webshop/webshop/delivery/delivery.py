@@ -338,6 +338,10 @@ def update_shipping(quotation, include_shipping):
     shipping_cost = 0
     distance = 0
     warning = None
+    shipping_rule = frappe.get_doc(
+        "Shipping Rule",
+        "Shipping (per KM)"
+    )
 
     if doc.custom_include_shipping:
 
@@ -366,11 +370,6 @@ def update_shipping(quotation, include_shipping):
             log(warning)
 
         else:
-            shipping_rule = frappe.get_doc(
-                "Shipping Rule",
-                "Shipping (per KM)"
-            )
-
             price_per_km = flt(shipping_rule.shipping_amount)
             shipping_cost = distance * price_per_km
 
