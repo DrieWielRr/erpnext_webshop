@@ -58,18 +58,23 @@
 <script>
 frappe.ready(() => {
 	$('#include-shipping').on('change', function () {
-		const checked = $(this).is(':checked') ? 1 : 0;
-
 		frappe.call({
-			method: "frappe.client.set_value",
+			method: "webshop.webshop.delivery.delivery.update_shipping",
 			args: {
-				doctype: "Quotation",
-				name: "{{ doc.name }}",
-				fieldname: "custom_include_shipping",
-				value: checked
+				quotation: "{{ doc.name }}",
+				include_shipping: this.checked ? 1 : 0
 			},
-			callback: function() {
-				// Refresh totals if needed
+			callback(r) {
+				if (r.message?.warning) {
+					frappe.msgprint({
+						title: __("Shipping Unavailable"),
+						indicator: "orange",
+						message: r.message.warning
+					});
+					return;
+				}
+
+				// Refresh displayed totals
 				location.reload();
 			}
 		});
