@@ -339,12 +339,10 @@ def update_shipping(quotation, include_shipping):
                 f"Shipping rule '{shipping_rule.name}': "
                 f"€{price_per_km}/km × {distance} km = €{shipping_cost}"
             )
-
-    doc.custom_shipping_fee = shipping_cost
-    doc.grand_total = doc.grand_total + shipping_cost
-
+    
     log(f"Updating shipping charge")
-    update_shipping_charge(doc, shipping_cost)
+    doc.custom_shipping_fee = shipping_cost
+    update_shipping_charge(doc, shipping_cost, shipping_rule)
 
     log(f"Re-calculate taxes and totals")
     doc.calculate_taxes_and_totals()
@@ -363,10 +361,10 @@ def update_shipping(quotation, include_shipping):
     }
 
 
-def update_shipping_charge(doc, shipping_cost):
-    shipping_description = "Shipping"
+def update_shipping_charge(doc, shipping_cost, shipping_rule):
+    shipping_description = shipping_rule.description or shipping_rule.name
+    log(shipping_rule.as_dict())
 
-    # Find existing shipping row
     shipping_row = None
     for row in doc.taxes:
         if row.description == shipping_description:
@@ -380,16 +378,19 @@ def update_shipping_charge(doc, shipping_cost):
         shipping_row.charge_type = "Actual"
         shipping_row.description = shipping_description
         shipping_row.tax_amount = flt(shipping_cost)
-        shipping_row.account_head = "Shipping Income - YourCompany"
-        shipping_row.cost_center = doc.cost_center
+
+        # Use Shipping Rule configuration
+        shipping_row.account_head = shipping_rule.account_head
+
+        if shipping_rule.cost_center:
+            shipping_row.cost_center = shipping_rule.cost_center
 
         log(
             f"Updated shipping charge row: "
-            f"{shipping_cost}"
+            f"{shipping_cost} using rule {shipping_rule.name}"
         )
 
     else:
-        # Remove shipping row if shipping is disabled
         doc.taxes = [
             row for row in doc.taxes
             if row.description != shipping_description
