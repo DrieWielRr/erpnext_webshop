@@ -91,6 +91,7 @@ $.extend(shopping_cart, {
 					item_code: opts.item_code,
 					qty: opts.qty,
 					configuration: opts.configuration,
+					is_add_to_cart: opts.is_add_to_cart !== undefined ? opts.is_add_to_cart : undefined,
 					additional_notes: opts.additional_notes !== undefined ? opts.additional_notes : undefined,
 					with_items: opts.with_items || 0
 				},
