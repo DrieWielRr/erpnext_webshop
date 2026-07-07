@@ -30,20 +30,6 @@
 				{% endfor %}
 			</table>
 
-			<div class="px-3 py-2">
-				<div class="form-check">
-					<input
-						type="checkbox"
-						class="form-check-input"
-						id="include-shipping"
-						{% if doc.custom_include_shipping %}checked{% endif %}
-					>
-					<label class="form-check-label" for="include-shipping">
-						{{ _("Include Shipping") }}
-					</label>
-				</div>
-			</div>
-
 			<table class="table w-100 grand-total mt-6">
 				<tr>
 					<td class="bill-content net-total">{{ _("Grand Total") }}</td>
@@ -53,31 +39,3 @@
 		{% endif %}
 	</div>
 </div>
-
-
-<script>
-frappe.ready(() => {
-	$('#include-shipping').on('change', function () {
-		frappe.call({
-			method: "webshop.webshop.delivery.delivery.update_shipping",
-			args: {
-				quotation: "{{ doc.name }}",
-				include_shipping: this.checked ? 1 : 0
-			},
-			callback(r) {
-				if (r.message?.warning) {
-					frappe.msgprint({
-						title: __("Shipping Unavailable"),
-						indicator: "orange",
-						message: r.message.warning
-					});
-					return;
-				}
-
-				// Refresh displayed totals
-				location.reload();
-			}
-		});
-	});
-});
-</script>

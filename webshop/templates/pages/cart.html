@@ -83,6 +83,48 @@
 		<!-- Right section -->
 		<div class="col-md-4">
 			<div class="cart-payment-addresses">
+
+				<!-- Shipping -->
+				<div class="px-3 py-2">
+					<div class="form-check">
+						<input
+							type="checkbox"
+							class="form-check-input"
+							id="include-shipping"
+							{% if doc.custom_include_shipping %}checked{% endif %}
+						>
+						<label class="form-check-label" for="include-shipping">
+							{{ _("Include Shipping") }}
+						</label>
+					</div>
+					<script>
+						frappe.ready(() => {
+							$('#include-shipping').on('change', function () {
+								frappe.call({
+									method: "webshop.webshop.delivery.delivery.update_shipping",
+									args: {
+										quotation: "{{ doc.name }}",
+										include_shipping: this.checked ? 1 : 0
+									},
+									callback(r) {
+										if (r.message?.warning) {
+											frappe.msgprint({
+												title: __("Shipping Unavailable"),
+												indicator: "orange",
+												message: r.message.warning
+											});
+											return;
+										}
+
+										// Refresh displayed totals
+										location.reload();
+									}
+								});
+							});
+						});
+					</script>
+				</div>
+
 				<!-- Apply Coupon Code  -->
 				<!-- {% set show_coupon_code = cart_settings.show_apply_coupon_code_in_website and cart_settings.enable_checkout %}  -->
 				{% set coupon_code = doc.coupon_code if doc.coupon_code else "" %}
@@ -135,7 +177,6 @@
 	{% endif %}
 </div>
 {% endif %}
-
 
 {% endblock %}
 
