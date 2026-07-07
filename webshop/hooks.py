@@ -74,6 +74,9 @@ doc_events = {
         "after_insert": ["webshop.utils.queue_translation_export"],
         "on_update": ["webshop.utils.queue_translation_export"],
         "on_trash": ["webshop.utils.queue_translation_export"]
+    },
+    "Address": {
+        "before_save": "webshop.webshop.delivery.delivery.update_delivery_distance"
     }
 }
 
