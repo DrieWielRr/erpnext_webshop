@@ -388,6 +388,7 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 				log(f"additional_notes={additional_notes}")
 				quotation_items[0].qty = (flt(quotation_items[0].qty) + 1) if is_add_to_cart else flt(qty)
 				quotation_items[0].warehouse = warehouse
+				quotation_items[0].custom_item_configurations = json.dumps(item_configuration)
 				quotation_items[0].additional_notes = additional_notes
 	else:
 		quotation_items_all = [
