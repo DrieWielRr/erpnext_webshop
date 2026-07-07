@@ -140,6 +140,25 @@
 	let initialQty = null;
 
 	function UpdatePricing(get_cart_status = true) {
+		// Calculate Extra's
+		log("[UpdatePricing] Calculate Extra's");
+		let extra = 0;
+		document.querySelectorAll(".combo").forEach(combo => {
+			const selected = combo._selected;
+			if (!selected) return;
+
+			// MULTI SELECT
+			if (Array.isArray(selected)) {
+				selected.forEach(v => {
+					extra += parseFloat(v.custom_price || 0);
+				});
+				return;
+			}
+
+			// SINGLE SELECT
+			extra += parseFloat(selected.custom_price || 0);
+		});
+
 		if (get_cart_status) {
 			log("[UpdatePricing] calling frappe");
 			frappe.call({
@@ -166,12 +185,16 @@
 						// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
 						// Note: Ensure initial_qty is available in JS (pass it from Jinja if needed)
 						initialQty = parseFloat("{{ initial_qty }}") || 1;; 
-						multiplier = r.message.in_cart ? 1 : initialQty;					
+						multiplier = r.message.in_cart ? 1 : initialQty;	
+						
+						// Calculate Extra based on multiplier
+						extra = extra * multiplier;
+						log(`[UpdatePricing] Extra options price: ${currency} ${extra}`);
 
 						if (multiplier > 1) {
 							// Update Main Price
 							const newPrice = basePrice * multiplier;
-							document.getElementById('lowPrice').textContent = `${currency} ${newPrice.toFixed(2)}`;
+							document.getElementById('lowPrice').textContent = `${currency} ${$(newPrice + extra).toFixed(2)}`;
 
 							// Update MRP (Striked Price)
 							if (mrpPrice > 0) {
@@ -203,23 +226,9 @@
 		} else {
 			log("[UpdatePricing] Updating prices only");
 
-			let extra = 0;
-			document.querySelectorAll(".combo").forEach(combo => {
-				const selected = combo._selected;
-				if (!selected) return;
-
-				// MULTI SELECT
-				if (Array.isArray(selected)) {
-					selected.forEach(v => {
-						extra += parseFloat(v.custom_price || 0);
-					});
-					return;
-				}
-
-				// SINGLE SELECT
-				extra += parseFloat(selected.custom_price || 0);
-			});
+			// Calculate Extra based on multiplier
 			extra = extra * multiplier;
+			log(`[UpdatePricing] Extra options price: ${currency} ${extra}`);
 
 			if (multiplier > 1) {
 				// Update Main Price
