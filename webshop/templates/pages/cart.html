@@ -118,6 +118,8 @@
 					<script>
 						frappe.ready(() => {
 							$('#include-shipping').on('change', function () {
+								$('[data-section="shipping-address"]').toggle(this.checked);
+								
 								frappe.call({
 									method: "webshop.webshop.delivery.delivery.update_shipping",
 									args: {

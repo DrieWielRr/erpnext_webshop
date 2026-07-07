@@ -5,27 +5,25 @@
 {% endif %}
 
 <!-- Shipping Address -->
-{% if doc.custom_include_shipping %}
-	<div class="mb-3 frappe-card p-5" data-section="shipping-address">
-		<div class="d-flex">
-			<div class="col-6 address-header"><h6>{{ _("Shipping Address") }}</h6></div>
-			<div class="col-6" style="padding: 0;">
-				<a class="ml-4 btn-new-address" role="button">{{ _("Add a new address") }}</a>
-			</div>
+<div class="mb-3 frappe-card p-5" data-section="shipping-address">
+	<div class="d-flex">
+		<div class="col-6 address-header"><h6>{{ _("Shipping Address") }}</h6></div>
+		<div class="col-6" style="padding: 0;">
+			<a class="ml-4 btn-new-address" role="button">{{ _("Add a new address") }}</a>
 		</div>
-
-		<hr>
-		{% for address in shipping_addresses %}
-		{% if doc.shipping_address_name == address.name %}
-		<div class="row no-gutters" data-fieldname="shipping_address_name">
-			<div class="w-100 address-container" data-address-name="{{address.name}}" data-address-type="shipping" data-active>
-				{% include "templates/includes/cart/address_card.html" %}
-			</div>
-		</div>
-		{% endif %}
-		{% endfor %}
 	</div>
-{% endif %}
+
+	<hr>
+	{% for address in shipping_addresses %}
+	{% if doc.shipping_address_name == address.name %}
+	<div class="row no-gutters" data-fieldname="shipping_address_name">
+		<div class="w-100 address-container" data-address-name="{{address.name}}" data-address-type="shipping" data-active>
+			{% include "templates/includes/cart/address_card.html" %}
+		</div>
+	</div>
+	{% endif %}
+	{% endfor %}
+</div>
 
 <!-- Billing Address -->
 <div class="checkbox ml-1 mb-2">
