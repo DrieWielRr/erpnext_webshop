@@ -321,6 +321,12 @@
 	frappe.ready(() => {
 		UpdatePricing();
 		
+		$(document).on('cart_update', function() {
+			console.log("[cart_update] refreshing pricing");
+			UpdatePricing();
+			handleAddToCartReset();
+		});
+
 		$('.page_content').on('click', '.btn-add-to-cart', (e) => {
 			const $btn = $(e.currentTarget);
 			$btn.prop('disabled', true);
@@ -338,7 +344,6 @@
 				...args,
 				callback(r) {
 					$btn.prop('disabled', false);
-					UpdatePricing();
 				}
 			});
 		});
