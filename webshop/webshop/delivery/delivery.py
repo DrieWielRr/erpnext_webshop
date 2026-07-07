@@ -107,7 +107,7 @@ def update_shipping_charge(doc, shipping_cost, shipping_rule):
 
         log(
             f"Updated shipping charge row: "
-            f"{shipping_cost} using rule {shipping_rule.name}"
+            f'{shipping_cost} using rule "{shipping_rule.name}"'
         )
 
     else:
@@ -385,7 +385,7 @@ def update_shipping(quotation, include_shipping):
 
     log(f"Re-calculate taxes and totals")
     doc.calculate_taxes_and_totals()
-    doc.save()
+    doc.save(ignore_permissions=True)
 
     log(
         f"Saved quotation {doc.name} "
