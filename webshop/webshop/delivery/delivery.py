@@ -362,8 +362,12 @@ def update_shipping(quotation, include_shipping):
 
 
 def update_shipping_charge(doc, shipping_cost, shipping_rule):
-    shipping_description = shipping_rule.description or shipping_rule.name
     log(shipping_rule.as_dict())
+
+    shipping_description = (
+        getattr(shipping_rule, "description", None)
+        or shipping_rule.name
+    )
 
     shipping_row = None
     for row in doc.taxes:
