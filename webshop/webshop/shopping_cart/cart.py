@@ -246,12 +246,12 @@ def update_payment_schedule_for_delivery(quotation):
     - Before Delivery: due date calculated from today until delivery date
     """
 
-    if not quotation.delivery_date:
+    if not quotation.custom_delivery_date:
         log("Payment schedule: no delivery date set, skipping delivery calculation")
         return
 
     today = getdate(nowdate())
-    delivery_date = getdate(quotation.delivery_date)
+    delivery_date = getdate(quotation.custom_delivery_date)
 
     days_until_delivery = date_diff(delivery_date, today)
 
