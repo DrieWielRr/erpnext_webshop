@@ -9,7 +9,7 @@ import frappe.defaults
 from frappe import _, throw
 from frappe.contacts.doctype.address.address import get_address_display
 from frappe.contacts.doctype.contact.contact import get_contact_name
-from frappe.utils import cint, cstr, flt, get_fullname, add_days, nowdate, getdate, date_diff
+from frappe.utils import cint, cstr, flt, get_fullname, add_days, nowdate
 from frappe.utils.nestedset import get_root_of
 from webshop.utils import log
 
@@ -237,45 +237,6 @@ def generate_configuration_summary(configuration):
     return summary.strip()
 
 
-def update_payment_schedule_for_delivery(quotation):
-    """
-    Update payment schedule based on delivery date.
-
-    Payment Terms:
-    - 50% Advance: unchanged
-    - Before Delivery: due date calculated from today until delivery date
-    """
-
-    if not quotation.custom_delivery_date:
-        log("Payment schedule: no delivery date set, skipping delivery calculation")
-        return
-
-    today = getdate(nowdate())
-    delivery_date = getdate(quotation.custom_delivery_date)
-
-    days_until_delivery = date_diff(delivery_date, today)
-
-    log(
-        f"Payment schedule calculation: "
-        f"today={today}, delivery_date={delivery_date}, "
-        f"days_until_delivery={days_until_delivery}"
-    )
-
-    for row in quotation.payment_schedule:
-        log(
-            f"Payment term found: {row.payment_term}, "
-            f"current credit_days={row.credit_days}"
-        )
-
-        if row.payment_term == "Before Delivery":
-            row.credit_days = max(days_until_delivery, 0)
-
-            log(
-                f"Updated payment term '{row.payment_term}': "
-                f"credit_days={row.credit_days}"
-            )
-
-
 
 
 # --------------------------------------------------
@@ -473,7 +434,6 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 					log(f"Updated item.amount={item.amount}")
 
 	quotation.flags.ignore_permissions = True
-	update_payment_schedule_for_delivery(quotation)
 
 	if not empty_card:
 		log(f"Quotation save")

@@ -14,7 +14,7 @@ import json
 import requests
 
 import frappe
-from frappe.utils import cint, flt, add_days, getdate
+from frappe.utils import cint, flt, add_days, nowdate, getdate, date_diff
 from webshop.utils import log
 
 # --------------------------------------------------------------------
@@ -118,6 +118,48 @@ def update_shipping_charge(doc, shipping_cost, shipping_rule):
         ]
 
         log("Removed shipping charge row")
+
+
+def update_payment_schedule_for_delivery(quotation):
+    """
+    Update payment schedule based on delivery date.
+
+    Payment Terms:
+    - 50% Advance: unchanged
+    - Before Delivery: due date calculated from today until delivery date
+    """
+
+    if not quotation.custom_delivery_date:
+        log("Payment schedule: no delivery date set, skipping delivery calculation")
+        return
+
+    today = getdate(nowdate())
+    delivery_date = getdate(quotation.custom_delivery_date)
+
+    days_until_delivery = date_diff(delivery_date, today)
+
+    log(
+        f"Payment schedule calculation: "
+        f"today={today}, delivery_date={delivery_date}, "
+        f"days_until_delivery={days_until_delivery}"
+    )
+
+    for row in quotation.payment_schedule:
+        log(
+            f"Payment term found: {row.payment_term}, "
+            f"current credit_days={row.credit_days}"
+        )
+
+        if row.payment_term == "Before Delivery":
+            row.credit_days = max(days_until_delivery, 0)
+
+            log(
+                f"Updated payment term '{row.payment_term}': "
+                f"credit_days={row.credit_days}"
+            )
+
+
+
 
 # --------------------------------------------------------------------
 # SHOP ADDRESS
@@ -347,8 +389,8 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
         )
 
     doc.custom_delivery_date = selected_date
-
     log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery-date: {doc.custom_delivery_date}")
+    update_payment_schedule_for_delivery(quotation)
 
     shipping_cost = 0
     distance = 0
