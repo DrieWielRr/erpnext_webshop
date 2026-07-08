@@ -124,7 +124,7 @@
 							class="form-control" 
 							id="delivery-date" 
 							value="{{ doc.delivery_date or '' }}"
-							min="{{ frappe.datetime.get_today() }}"
+							min="{{ frappe.utils.get_today() }}"
 						>
 					</div>
 
