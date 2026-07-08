@@ -82,6 +82,7 @@ def set_coordinates(address, latitude, longitude):
 def update_shipping_charge(doc, shipping_cost, shipping_rule):
     shipping_description = (
         getattr(shipping_rule, "label", None)
+        or shipping_rule.custom_shipping_rule_label_custom
         or shipping_rule.name
     )
 
