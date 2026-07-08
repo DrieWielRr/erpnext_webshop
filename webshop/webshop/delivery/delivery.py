@@ -390,7 +390,7 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
     doc.custom_delivery_date = selected_date
     log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery-date: {doc.custom_delivery_date}")
-    update_payment_schedule_for_delivery(quotation)
+    update_payment_schedule_for_delivery(doc)
 
     shipping_cost = 0
     distance = 0
