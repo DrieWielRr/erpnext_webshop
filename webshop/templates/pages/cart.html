@@ -211,7 +211,7 @@
 								validateFormState();
 								
 								// Only send to the server if a date has actually been selected
-								if (selectedDate) {
+								if (this.value) {
 									syncShippingData(false);
 								}
 							});
