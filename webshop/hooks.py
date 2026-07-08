@@ -77,6 +77,15 @@ doc_events = {
     },
     "Address": {
         "before_save": "webshop.webshop.delivery.delivery.update_delivery_distance"
+    },
+    "Website Settings": {
+        "on_update": "webshop.webshop.dynamic_menu.dynamic_menu.sync_dynamic_navbar",
+    },
+    "Item Group": {
+        "after_insert": "webshop.webshop.dynamic_menu.dynamic_menu.sync_dynamic_navbar",
+        "on_update": "webshop.webshop.dynamic_menu.dynamic_menu.sync_dynamic_navbar",
+        "on_trash": "webshop.webshop.dynamic_menu.dynamic_menu.sync_dynamic_navbar",
+        "after_rename": "webshop.webshop.dynamic_menu.dynamic_menu.sync_dynamic_navbar",
     }
 }
 

@@ -305,7 +305,9 @@ def update_delivery_distance(doc, method=None):
     """
     address = doc
 
+    log("")
     log("=== UPDATE DELIVERY DISTANCE START ===")
+    log("=" * 60)
     log(f"Address: {address.name}")
     log(f"Address text: {build_address(address)}")
 
@@ -346,7 +348,9 @@ def update_delivery_distance(doc, method=None):
             f"Skipping delivery calculation. "
             f"Address {doc.name} is the shop address."
         )
+        log("=" * 60)
         log("=== UPDATE DELIVERY DISTANCE END ===")
+        log("")
         return
 
     #
@@ -367,7 +371,9 @@ def update_delivery_distance(doc, method=None):
     address.custom_delivery_distance_km = distance
     log(f"Updated {address.name}.custom_delivery_distance_km (distance: {distance})")
 
+    log("=" * 60)
     log("=== UPDATE DELIVERY DISTANCE END ===")
+    log("")
     return distance
 
 

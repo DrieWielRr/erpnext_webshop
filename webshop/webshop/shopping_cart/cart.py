@@ -181,26 +181,39 @@ def rebuild_configuration_from_server(configuration, item_name=None):
     return updated_configuration, total_extra
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_cart_status(item_code):
-    """
-    Returns the quantity of a specific item currently in the active cart.
-    Returns 0 if not found.
-    """
-    log(f"=== CHECKING CART STATUS FOR: {item_code} ===")
+	"""
+	Returns the quantity of a specific item currently in the active cart.
+	Returns 0 if not found.
+	"""
+	log("")
+	log(f"=== CHECKING CART STATUS FOR: {item_code} ===")
+	log("=" * 60)
+
+	# return 0 if user is a guest
+	if frappe.session.user == "Guest":
+		log("Guest user detected. Returning qty 0.")
+		log("=" * 60)
+		log("")
+		return {
+			"in_cart": False,
+			"qty": 0
+		}
+
+	# Use the same helper function you use in update_cart
+	quotation = _get_cart_quotation()
     
-    # Use the same helper function you use in update_cart
-    quotation = _get_cart_quotation()
+	# Filter for the specific item_code
+	items_in_cart = [d for d in quotation.items if d.item_code == item_code]
     
-    # Filter for the specific item_code
-    items_in_cart = [d for d in quotation.items if d.item_code == item_code]
+	# Sum the quantity (handles cases where the same item might be added multiple times)
+	total_qty = sum(flt(d.qty) for d in items_in_cart)
     
-    # Sum the quantity (handles cases where the same item might be added multiple times)
-    total_qty = sum(flt(d.qty) for d in items_in_cart)
-    
-    log(f"Found {total_qty} units of {item_code} in cart.")
-    
-    return {
+	log(f"Found {total_qty} units of {item_code} in cart.")
+	log("=" * 60)
+	log("")
+	return {
         "in_cart": total_qty > 0,
         "qty": total_qty
     }
@@ -252,7 +265,9 @@ def generate_configuration_summary(configuration):
 @frappe.whitelist()
 def update_cart(item_code, qty, additional_notes=None, with_items=False, configuration=None, is_add_to_cart=False):
 	
+	log("")
 	log("=== CUSTOM UPDATE_CART START ===")
+	log("=" * 60)
 
 	log(f"item_code={item_code}")
 	log(f"qty={qty}")
@@ -447,7 +462,9 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 	set_cart_count(quotation)
 
 	log(f"Return render_template")
+	log("=" * 60)
 	log("=== CUSTOM UPDATE_CART END ===")
+	log("")
 	if cint(with_items):                 
 		context = get_cart_quotation(quotation)
 			
