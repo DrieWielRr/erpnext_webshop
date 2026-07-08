@@ -192,32 +192,32 @@
 						const newPrice = basePrice * multiplier;
 						log(`[UpdatePricing] Extra options price: ${currency} ${extra} (newPrice: ${newPrice})`);
 
-						if (multiplier > 1) {
-							// Update Main Price							
-							document.getElementById('lowPrice').textContent = `${currency} ${(newPrice + extra).toFixed(2)}`;
+						// Locate Elements
+						const priceElement = document.getElementById('lowPrice') || document.querySelector('highPrice');
+						const pricePerUOMElement = document.getElementById('pricePerUOM');
+						const strikedElement = document.querySelector('#lowPrice s') || document.querySelector('#highPrice s');
 
+						// Update Main Price
+						priceElement.textContent = `${currency} ${(newPrice + extra).toFixed(2)}`;
+
+						if (multiplier > 1) {
 							// Update MRP (Striked Price)
-							if (mrpPrice > 0) {
-								const strikedElement = document.querySelector('#highPrice s');
+							if (mrpPrice > 0 && strikedElement) {
 								const newMrp = mrpPrice * multiplier;
 								strikedElement.textContent = `MRP ${currency} ${newMrp.toFixed(2).replace('.', ',')}`;
 							}
 							
 							// Update UOM price
-							document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+							pricePerUOMElement.textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
 																												
 							log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
 						} else {
-							// Update Main Price
-							document.getElementById('lowPrice').textContent =  `${currency} ${(newPrice + extra).toFixed(2)}`;
-
 							// Update MRP (Striked Price)
-							if (mrpPrice > 0) {
-								const strikedElement = document.querySelector('#highPrice s');
+							if (mrpPrice > 0 && strikedElement) {
 								strikedElement.textContent = `MRP ${currency} ${mrpPrice.toFixed(2).replace('.', ',')}`;
 							}
 						
-							document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
+							pricePerUOMElement.textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom})`;
 							log(`[UpdatePricing] UI Updated: Multiplier not required, restored standard pricing`);
 						}
 					}
