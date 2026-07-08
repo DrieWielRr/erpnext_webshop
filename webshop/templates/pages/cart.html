@@ -118,13 +118,13 @@
 					<script>
 						frappe.ready(() => {
 							$('#include-shipping').on('change', function () {
-								$('[data-section="shipping-address"]').toggle(this.checked);
-								
+								const includeShipping = this.checked;
+
 								frappe.call({
 									method: "webshop.webshop.delivery.delivery.update_shipping",
 									args: {
 										quotation: "{{ doc.name }}",
-										include_shipping: this.checked ? 1 : 0
+										include_shipping: includeShipping ? 1 : 0
 									},
 									callback(r) {
 										if (r.message?.warning) {
@@ -133,13 +133,21 @@
 												indicator: "orange",
 												message: r.message.warning
 											});
+
+											// Revert checkbox
+											$('#include-shipping').prop('checked', false);
+
+											$('[data-section="shipping-address"]').hide();
+
 											return;
 										}
 
-										// Success path
+										// Update visibility after server confirms
+										$('[data-section="shipping-address"]').toggle(includeShipping);
+
 										console.log("Shipping updated:", r.message);
 
-										// Refresh displayed totals
+										// Refresh totals/address state
 										location.reload();
 									}
 								});
