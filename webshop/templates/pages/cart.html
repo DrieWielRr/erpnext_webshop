@@ -136,7 +136,7 @@
 							
 							// update datepicker minimum date
 							const minDate = new Date(frappe.datetime.get_today());
-							minDate.setDate(today.getDate() + 1);
+							minDate.setDate(minDate.getDate() + 1);
 							$('#delivery-date').attr('min', minDate);
 
 							// Check if submit can be allowed
