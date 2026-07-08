@@ -189,11 +189,11 @@
 						
 						// Calculate Extra based on multiplier
 						extra = extra * multiplier;
-						log(`[UpdatePricing] Extra options price: ${currency} ${extra}`);
+						const newPrice = basePrice * multiplier;
+						log(`[UpdatePricing] Extra options price: ${currency} ${extra} (newPrice: ${newPrice})`);
 
 						if (multiplier > 1) {
-							// Update Main Price
-							const newPrice = basePrice * multiplier;
+							// Update Main Price							
 							document.getElementById('lowPrice').textContent = `${currency} ${(newPrice + extra).toFixed(2)}`;
 
 							// Update MRP (Striked Price)
@@ -209,7 +209,7 @@
 							log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
 						} else {
 							// Update Main Price
-							document.getElementById('lowPrice').textContent = `${currency} ${basePrice.toFixed(2)}`;
+							document.getElementById('lowPrice').textContent =  `${currency} ${(newPrice + extra).toFixed(2)}`;
 
 							// Update MRP (Striked Price)
 							if (mrpPrice > 0) {
