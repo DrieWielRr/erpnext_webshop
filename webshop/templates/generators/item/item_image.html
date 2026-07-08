@@ -1,108 +1,309 @@
 {% set column_size = 5 if slides else 4 %}
-<div class="col-md-{{ column_size }} h-100 d-flex mb-4">	
-	{% if slides %}
-		<div class="item-slideshow d-flex flex-column mr-3">
-			{% for item in slides %}
-			<img class="item-slideshow-image mb-2 {% if loop.first %}active{% endif %}"
-					src="{{ item.image }}" alt="{{ item.heading }}">
-			{% endfor %}
-		</div>
-		{{ product_image(slides[0].image, 'product-image') }}
-		<!-- Simple image slideshow -->
-		<script>
-			frappe.ready(() => {
-				$('.page_content').on('click', '.item-slideshow-image', (e) => {
-					const $img = $(e.currentTarget);
-					const link = $img.prop('src');
-					const $product_image = $('.product-image');
-					$product_image.find('a').prop('href', link);
-					$product_image.find('img').prop('src', link);
 
-					$('.item-slideshow-image').removeClass('active');
-					$img.addClass('active');
-				});
-			})
-		</script>
-	{% else %}
-		{{ product_image(doc.website_image, alt=doc.website_image_alt or doc.item_name) }}
-	{% endif %}
 
-	<!-- Simple image preview -->
-
-	<div class="image-zoom-view" style="display: none;">
-		<button type="button" class="close" aria-label="Close">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-			stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
-				<line x1="18" y1="6" x2="6" y2="18"></line>
-				<line x1="6" y1="6" x2="18" y2="18"></line>
-			</svg>
-		</button>
-	</div>
-</div>
 <style>
-	.website-image {
+	.product-carousel-main {
+		width: 100%;
+	}
+
+	.product-carousel-image {
+		display: none;
+		width: 100%;
+		height: auto;
+		object-fit: contain;
+		cursor: zoom-in;
+	}
+
+	.product-carousel-image.active {
+		display: block;
+	}
+
+	.product-carousel-navigation {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		gap: 10px;
+		margin-top: 12px;
+	}
+
+	/* arrows always at edges */
+	.carousel-prev,
+	.carousel-next {
+		flex: 0 0 40px;
+		height: 70px;
+		border: none;
+		background: transparent;
+		font-size: 36px;
 		cursor: pointer;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* thumbnail area gets everything between arrows */
+	.product-carousel-thumbs {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		gap: 8px;
+		overflow: hidden;
+	}
+
+	/* thumbnails */
+	.product-carousel-thumb {
+		flex: 0 0 70px;
+		width: 70px;
+		height: 70px;
+		object-fit: cover;
+		cursor: pointer;
+		opacity: .5;
+		border: 2px solid transparent;
+		border-radius: 6px;
+	}
+
+	.product-carousel-thumb.active {
+		opacity: 1;
+		border-color: var(--primary);
 	}
 
 	.image-zoom-view {
 		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 100vh;
-		width: 100vw;
-		display: flex;
+		inset: 0;
+		display: none;
 		justify-content: center;
 		align-items: center;
-		background: rgba(0, 0, 0, 0.8);
+		background: rgba(0,0,0,.85);
 		z-index: 1080;
 	}
 
 	.image-zoom-view img {
-		max-height: 100%;
-		max-width: 100%;
+		max-width: 95vw;
+		max-height: 95vh;
+		object-fit: contain;
 	}
 
 	.image-zoom-view button {
 		position: absolute;
 		right: 3rem;
 		top: 2rem;
-	}
-
-	.image-zoom-view svg {
-		color: var(--white);
+		z-index: 2;
+		font-size: 32px;
+		background: transparent;
+		color: white;
+		border: none;
+		cursor: pointer;
 	}
 </style>
+
+
+<div class="col-md-{{ column_size }} h-100 d-flex mb-4">
+
+	{% if slides %}
+
+	<div class="product-carousel">
+
+		<!-- Main image -->
+		<div class="product-carousel-main">
+
+			{% for item in slides %}
+
+			<img
+				class="product-carousel-image {% if loop.first %}active{% endif %}"
+				src="{{ item.image }}"
+				alt="{{ item.heading }}"
+				data-index="{{ loop.index0 }}"
+			>
+
+			{% endfor %}
+
+		</div>
+
+
+		<!-- Thumbnail navigation -->
+		<div class="product-carousel-navigation">
+
+			<button class="carousel-prev">
+				‹
+			</button>
+
+
+			<div class="product-carousel-thumbs">
+
+				{% for item in slides %}
+
+				<img
+					class="product-carousel-thumb {% if loop.first %}active{% endif %}"
+					src="{{ item.image }}"
+					alt="{{ item.heading }}"
+					data-index="{{ loop.index0 }}"
+				>
+
+				{% endfor %}
+
+			</div>
+
+
+			<button class="carousel-next">
+				›
+			</button>
+
+		</div>
+
+	</div>
+
+
+	{% else %}
+
+		{{ product_image(
+			doc.website_image,
+			alt=doc.website_image_alt or doc.item_name
+		) }}
+
+	{% endif %}
+
+
+	<!-- Zoom -->
+	<div class="image-zoom-view" style="display:none;">
+		<button type="button" class="close">
+			×
+		</button>
+	</div>
+
+
+</div>
+
+
 <script>
 	frappe.ready(() => {
-		const $zoom_wrapper = $('.image-zoom-view');
+		document.querySelectorAll(".product-carousel").forEach(carousel => {
 
-		$('.website-image').on('click', (e) => {
-			e.preventDefault();
-			const $img = $(e.target);
-			const src = $img.prop('src');
-			if (!src) return;
-			show_preview(src);
-		});
+			const images = carousel.querySelectorAll(
+				".product-carousel-image"
+			);
 
-		$zoom_wrapper.on('click', 'button', hide_preview);
+			const thumbs = carousel.querySelectorAll(
+				".product-carousel-thumb"
+			);
 
-		$(document).on('keydown', (e) => {
-			if (e.key === 'Escape') {
-				hide_preview();
+			const zoomWrapper = document.querySelector(				
+				".image-zoom-view"
+			);
+
+			const mainImages =
+				carousel.querySelectorAll(
+					".product-carousel-image"
+				);
+
+
+			mainImages.forEach(image => {
+
+				image.addEventListener(
+					"click",
+					() => {
+
+						if (!zoomWrapper) {
+							return;
+						}
+
+						zoomWrapper.innerHTML = `
+							<button type="button" class="close">
+								×
+							</button>
+							<img src="${image.src}">
+						`;
+
+						zoomWrapper.style.display = "flex";
+
+
+						zoomWrapper
+							.querySelector(".close")
+							.onclick = () => {
+								zoomWrapper.style.display = "none";
+							};
+					}
+				);
+
+			});
+
+			let current = 0;
+			function activate(index) {
+
+				if (!images[index]) {
+					return;
+				}
+
+				images.forEach(img =>
+					img.classList.remove("active")
+				);
+
+				thumbs.forEach(img =>
+					img.classList.remove("active")
+				);
+
+
+				images[index].classList.add("active");
+				thumbs[index].classList.add("active");
+
+				current = index;
 			}
+
+
+			thumbs.forEach((thumb, index) => {
+
+				thumb.addEventListener(
+					"click",
+					() => activate(index)
+				);
+
+			});
+
+
+			carousel
+				.querySelector(".carousel-prev")
+				.onclick = () => {
+
+					activate(
+						current > 0
+						? current - 1
+						: images.length - 1
+					);
+
+				};
+
+
+			carousel
+				.querySelector(".carousel-next")
+				.onclick = () => {
+
+					activate(
+						current < images.length - 1
+						? current + 1
+						: 0
+					);
+
+				};
 		});
 
-		function show_preview(src) {
-			$zoom_wrapper.show();
-			const $img = $(`<img src="${src}">`)
-			$zoom_wrapper.append($img);
-		}
+		document.addEventListener(
+			"keydown",
+			(e) => {
 
-		function hide_preview() {
-			$zoom_wrapper.find('img').remove();
-			$zoom_wrapper.hide();
-		}
-	})
+				if (e.key !== "Escape") {
+					return;
+				}
+
+				const zoomWrapper =
+					document.querySelector(".image-zoom-view");
+
+				if (!zoomWrapper) {
+					return;
+				}
+
+				zoomWrapper.style.display = "none";
+				zoomWrapper.innerHTML = "";
+
+			}
+		);
+	});	
 </script>
