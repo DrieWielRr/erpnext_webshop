@@ -152,10 +152,12 @@ def update_payment_schedule_for_delivery(quotation):
 
         if row.payment_term == "Before Delivery":
             row.credit_days = max(days_until_delivery, 0)
+            row.due_date = delivery_date
 
             log(
                 f"Updated payment term '{row.payment_term}': "
-                f"credit_days={row.credit_days}"
+                f"credit_days={row.credit_days}, "
+                f"due_date={row.due_date}"
             )
 
 
