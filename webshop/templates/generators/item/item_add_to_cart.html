@@ -194,7 +194,7 @@
 						if (multiplier > 1) {
 							// Update Main Price
 							const newPrice = basePrice * multiplier;
-							document.getElementById('lowPrice').textContent = `${currency} ${$(newPrice + extra).toFixed(2)}`;
+							document.getElementById('lowPrice').textContent = `${currency} ${(newPrice + extra).toFixed(2)}`;
 
 							// Update MRP (Striked Price)
 							if (mrpPrice > 0) {
