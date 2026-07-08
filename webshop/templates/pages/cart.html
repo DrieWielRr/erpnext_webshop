@@ -136,7 +136,6 @@
 
 											// Revert checkbox
 											$('#include-shipping').prop('checked', false);
-
 											$('[data-section="shipping-address"]').hide();
 
 											return;
@@ -148,7 +147,7 @@
 										console.log("Shipping updated:", r.message);
 
 										// Refresh totals/address state
-										location.reload();
+										UpdatePricing();
 									}
 								});
 							});
