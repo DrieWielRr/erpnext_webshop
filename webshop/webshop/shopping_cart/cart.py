@@ -246,10 +246,6 @@ def update_payment_schedule_for_delivery(quotation):
     - Before Delivery: due date calculated from today until delivery date
     """
 
-    if not quotation.custom_include_shipping:
-        log("Payment schedule: shipping not included, skipping delivery calculation")
-        return
-
     if not quotation.delivery_date:
         log("Payment schedule: no delivery date set, skipping delivery calculation")
         return
@@ -478,7 +474,7 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 
 	quotation.flags.ignore_permissions = True
 	update_payment_schedule_for_delivery(quotation)
-	
+
 	if not empty_card:
 		log(f"Quotation save")
 		quotation.save()
