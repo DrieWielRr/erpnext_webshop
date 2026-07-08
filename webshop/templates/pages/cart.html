@@ -123,7 +123,7 @@
 							type="date" 
 							class="form-control" 
 							id="delivery-date" 
-							value="{{ doc.delivery_date or '' }}"
+							value="{{ doc.delivery_date or '' }}"							
 						>
 					</div>
 
@@ -133,6 +133,11 @@
 							const $dateInput = $('#delivery-date');
 							const $dateContainer = $('#delivery-date-container');
 							const $btnSubmit = $('.btn-request-for-quotation');
+							
+							// update datepicker minimum date
+							const minDate = new Date(frappe.datetime.get_today());
+							minDate.setDate(today.getDate() + 1);
+							$('#delivery-date').attr('min', minDate);
 
 							// Check if submit can be allowed
 							function validateFormState() {
