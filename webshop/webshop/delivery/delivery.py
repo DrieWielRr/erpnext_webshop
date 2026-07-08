@@ -14,7 +14,7 @@ import json
 import requests
 
 import frappe
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, add_days, getdate
 from webshop.utils import log
 
 # --------------------------------------------------------------------
@@ -335,9 +335,20 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
     doc.custom_include_shipping = cint(include_shipping)
 
-    if doc.custom_include_shipping and delivery_date:
-        doc.delivery_date = delivery_date
-    elif not doc.custom_include_shipping:
+    if doc.custom_include_shipping:
+        if not delivery_date:
+            frappe.throw(_("Please select a delivery date."))
+
+        selected_date = getdate(delivery_date)
+        minimum_date = add_days(getdate(), 1)
+
+        if selected_date < minimum_date:
+            frappe.throw(
+                _("The earliest available delivery date is {0}.").format(minimum_date)
+            )
+
+        doc.delivery_date = selected_date
+    else:
         doc.delivery_date = None
 
     log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery_date: {doc.delivery_date}")

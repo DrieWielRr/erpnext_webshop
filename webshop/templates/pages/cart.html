@@ -135,9 +135,12 @@
 							const $btnSubmit = $('.btn-request-for-quotation');
 							
 							// update datepicker minimum date
-							const minDate = new Date(frappe.datetime.get_today());
+							const minDate = new Date();
 							minDate.setDate(minDate.getDate() + 1);
-							$('#delivery-date').attr('min', minDate);
+							$dateInput.attr(
+								'min',
+								minDate.toISOString().split('T')[0]
+							);
 
 							// Check if submit can be allowed
 							function validateFormState() {
