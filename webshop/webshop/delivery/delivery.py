@@ -330,11 +330,17 @@ def update_delivery_distance(doc, method=None):
 
 
 @frappe.whitelist()
-def update_shipping(quotation, include_shipping):
+def update_shipping(quotation, include_shipping, delivery_date=None):
     doc = frappe.get_doc("Quotation", quotation)
 
     doc.custom_include_shipping = cint(include_shipping)
-    log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}")
+
+    if doc.custom_include_shipping and delivery_date:
+        doc.delivery_date = delivery_date
+    elif not doc.custom_include_shipping:
+        doc.delivery_date = None
+
+    log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery_date: {doc.delivery_date}")
 
     shipping_cost = 0
     distance = 0

@@ -102,7 +102,7 @@
 					{% endif %}
 				{% endif %}
 
-				<!-- Shipping -->
+				<!-- Shipping & Delivery Date -->
 				<div class="px-3 py-2">
 					<div class="form-check">
 						<input
@@ -115,16 +115,46 @@
 							{{ _("Include Shipping") }}
 						</label>
 					</div>
+
+					<!-- Date picker -->
+					<div id="delivery-date-container" class="mt-2" style="{% if not doc.custom_include_shipping %}display: none;{% endif %}">
+						<label class="form-label small text-muted" for="delivery-date">{{ _("Delivery Date") }} *</label>
+						<input 
+							type="date" 
+							class="form-control" 
+							id="delivery-date" 
+							value="{{ doc.delivery_date or '' }}"
+							min="{{ frappe.datetime.get_today() }}"
+						>
+					</div>
+
 					<script>
 						frappe.ready(() => {
-							$('#include-shipping').on('change', function () {
-								const includeShipping = this.checked;
+							const $checkbox = $('#include-shipping');
+							const $dateInput = $('#delivery-date');
+							const $dateContainer = $('#delivery-date-container');
+							const $btnSubmit = $('.btn-request-for-quotation');
+
+							// Check if submit can be allowed
+							function validateFormState() {
+								if ($checkbox.is(':checked') && !$dateInput.val()) {
+									$btnSubmit.prop('disabled', true);
+								} else {
+									$btnSubmit.prop('disabled', false);
+								}
+							}
+
+							// Central function to send the changes to the server
+							function syncShippingData(reloadOnSuccess = false) {
+								const includeShipping = $checkbox.is(':checked');
+								const selectedDate = $dateInput.val();
 
 								frappe.call({
 									method: "webshop.webshop.delivery.delivery.update_shipping",
 									args: {
 										quotation: "{{ doc.name }}",
-										include_shipping: includeShipping ? 1 : 0
+										include_shipping: includeShipping ? 1 : 0,
+										delivery_date: selectedDate || null 
 									},
 									callback(r) {
 										if (r.message?.warning) {
@@ -134,26 +164,54 @@
 												message: r.message.warning
 											});
 
-											// Revert checkbox
-											$('#include-shipping').prop('checked', false);
+											// Reset bij foutmelding
+											$checkbox.prop('checked', false);
+											$dateContainer.hide();
+											$dateInput.val('');
 											$('[data-section="shipping-address"]').hide();
-
+											validateFormState();
 											return;
 										}
 
-										// Update visibility after server confirms
 										$('[data-section="shipping-address"]').toggle(includeShipping);
-
-										console.log("Shipping updated:", r.message);
-
-										// Refresh totals/address state
-										location.reload();
+										
+										if (reloadOnSuccess) {
+											location.reload();
+										}
 									}
 								});
+							}
+
+							// Initial check when loading the page
+							validateFormState();
+
+							// Event: Checkbox change
+							$checkbox.on('change', function () {
+								const includeShipping = this.checked;
+								$dateContainer.toggle(includeShipping);
+								
+								if (!includeShipping) {
+									$dateInput.val('');
+								}
+
+								validateFormState();
+								// Reload the page immediately upon checking or unchecking to update totals/rows.
+								syncShippingData(true); 
+							});
+
+							// Event: Date change
+							$dateInput.on('change', function () {
+								validateFormState();
+								
+								// Only send to the server if a date has actually been selected
+								if (selectedDate) {
+									syncShippingData(false);
+								}
 							});
 						});
 					</script>
 				</div>
+
 
 				<div class="mb-3 frappe-card p-5">
 					<div class="payment-summary">
