@@ -397,7 +397,7 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
         doc.custom_include_shipping = cint(include_shipping)
 
-        if include_shipping and not delivery_date:
+        if doc.custom_include_shipping and not delivery_date:
             frappe.throw(_("Please select a delivery date."))
 
         selected_date = getdate(delivery_date)
