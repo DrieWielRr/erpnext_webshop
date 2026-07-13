@@ -162,6 +162,7 @@
 
 								// Disable "billing same as delivery" when shipping is selected
 								$sameBillingCheckbox.prop('disabled', includeShipping);
+								$sameBillingContainer.toggle(!includeShipping);
 							}
 
 							// Central function to send the changes to the server
