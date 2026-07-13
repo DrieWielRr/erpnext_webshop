@@ -144,11 +144,10 @@
 
 							// Check if submit can be allowed
 							function validateFormState() {
-								if (!$dateInput.val()) {
-									$btnSubmit.prop('disabled', true);
-								} else {
-									$btnSubmit.prop('disabled', false);
-								}
+								const hasDate = !!$dateInput.val();
+
+								$btnSubmit.prop('disabled', !hasDate);
+								$checkbox.prop('disabled', !hasDate);
 							}
 
 							// Central function to send the changes to the server
@@ -205,7 +204,7 @@
 							// Event: Checkbox change
 							$checkbox.on('change', function () {
 								const includeShipping = this.checked;
-								
+
 								validateFormState();
 								// Reload the page immediately upon checking or unchecking to update totals/rows.
 								syncShippingData(true); 
