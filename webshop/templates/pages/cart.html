@@ -172,8 +172,6 @@
 											});
 
 											$checkbox.prop('checked', false);
-											$dateContainer.hide();
-											$dateInput.val('');
 											$('[data-section="shipping-address"]').hide();
 											validateFormState();
 											return;
@@ -195,8 +193,6 @@
 										});
 
 										$checkbox.prop('checked', false);
-										$dateContainer.hide();
-										$dateInput.val('');
 										$('[data-section="shipping-address"]').hide();
 										validateFormState();
 									}
@@ -209,12 +205,7 @@
 							// Event: Checkbox change
 							$checkbox.on('change', function () {
 								const includeShipping = this.checked;
-								$dateContainer.toggle(includeShipping);
 								
-								if (!includeShipping) {
-									$dateInput.val('');
-								}
-
 								validateFormState();
 								// Reload the page immediately upon checking or unchecking to update totals/rows.
 								syncShippingData(true); 
