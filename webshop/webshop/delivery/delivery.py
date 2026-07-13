@@ -42,8 +42,8 @@ def clean_address_line(address_line):
 
 def build_address(address):
     return ", ".join(filter(None, [
-        clean_address_line1(address.address_line1),
-        clean_address_line1(address.address_line2),
+        clean_address_line(address.address_line1),
+        clean_address_line(address.address_line2),
         address.pincode,
         address.city,
         address.country,
