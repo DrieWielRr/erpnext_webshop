@@ -171,7 +171,6 @@
 												message: r.message.warning
 											});
 
-											// Reset bij foutmelding
 											$checkbox.prop('checked', false);
 											$dateContainer.hide();
 											$dateInput.val('');
@@ -181,10 +180,25 @@
 										}
 
 										$('[data-section="shipping-address"]').toggle(includeShipping);
-										
+
 										if (reloadOnSuccess) {
 											location.reload();
 										}
+									},
+									error(r) {
+										console.error("Shipping update failed:", r);
+
+										frappe.msgprint({
+											title: __("Shipping Error"),
+											indicator: "red",
+											message: r.message || __("Unable to calculate shipping. Please try again.")
+										});
+
+										$checkbox.prop('checked', false);
+										$dateContainer.hide();
+										$dateInput.val('');
+										$('[data-section="shipping-address"]').hide();
+										validateFormState();
 									}
 								});
 							}

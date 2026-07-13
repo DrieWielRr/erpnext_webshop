@@ -15,6 +15,7 @@ import requests
 import re
 
 import frappe
+from frappe import _
 from frappe.utils import cint, flt, add_days, nowdate, getdate, date_diff
 from webshop.utils import log
 
@@ -391,86 +392,92 @@ def update_delivery_distance(doc, method=None):
 
 @frappe.whitelist()
 def update_shipping(quotation, include_shipping, delivery_date=None):
-    doc = frappe.get_doc("Quotation", quotation)
+    try:
+        doc = frappe.get_doc("Quotation", quotation)
 
-    doc.custom_include_shipping = cint(include_shipping)
+        doc.custom_include_shipping = cint(include_shipping)
 
-    if not delivery_date:
-        frappe.throw(_("Please select a delivery date."))
+        if not delivery_date:
+            frappe.throw(_("Please select a delivery date."))
 
-    selected_date = getdate(delivery_date)
-    minimum_date = add_days(getdate(), 1)
+        selected_date = getdate(delivery_date)
+        minimum_date = add_days(getdate(), 1)
 
-    if selected_date < minimum_date:
-        frappe.throw(
-            _("The earliest available delivery date is {0}.").format(minimum_date)
+        if selected_date < minimum_date:
+            frappe.throw(
+                _("The earliest available delivery date is {0}.").format(minimum_date)
+            )
+
+        doc.custom_delivery_date = selected_date
+        log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery-date: {doc.custom_delivery_date}")
+        
+        shipping_cost = 0
+        distance = 0
+        warning = None
+        shipping_rule = frappe.get_doc(
+            "Shipping Rule",
+            "Shipping (per KM)"
         )
 
-    doc.custom_delivery_date = selected_date
-    log(f"Quotation {doc.name}: custom_include_shipping={doc.custom_include_shipping}, delivery-date: {doc.custom_delivery_date}")
-    
-    shipping_cost = 0
-    distance = 0
-    warning = None
-    shipping_rule = frappe.get_doc(
-        "Shipping Rule",
-        "Shipping (per KM)"
-    )
+        if doc.custom_include_shipping:
 
-    if doc.custom_include_shipping:
+            if doc.shipping_address_name:
+                log(f"Using shipping address: {doc.shipping_address_name}")
 
-        if doc.shipping_address_name:
-            log(f"Using shipping address: {doc.shipping_address_name}")
+                address = frappe.get_doc("Address", doc.shipping_address_name)
+                distance = flt(address.custom_delivery_distance_km or 0)
 
-            address = frappe.get_doc("Address", doc.shipping_address_name)
-            distance = flt(address.custom_delivery_distance_km or 0)
+                log(
+                    f"Loaded {address.name}.custom_delivery_distance_km "
+                    f"(distance: {distance} km)"
+                )
+            else:
+                log(f"Quotation {doc.name} has no shipping address selected.")
+
+            doc.custom_delivery_distance_km = distance
 
             log(
-                f"Loaded {address.name}.custom_delivery_distance_km "
+                f"Updated {doc.name}.custom_delivery_distance_km "
                 f"(distance: {distance} km)"
             )
-        else:
-            log(f"Quotation {doc.name} has no shipping address selected.")
 
-        doc.custom_delivery_distance_km = distance
+            if doc.shipping_address_name and distance == 0:
+                warning = _("Shipping calculation failed. Please check the shipping address.")
+                log(warning)
+
+            else:
+                price_per_km = flt(shipping_rule.shipping_amount)
+                shipping_cost = distance * price_per_km
+
+                log(
+                    f"Shipping rule '{shipping_rule.name}': "
+                    f"€{price_per_km}/km × {distance} km = €{shipping_cost}"
+                )
+        
+        log(f"Updating shipping charge")
+        doc.custom_shipping_fee = shipping_cost
+        update_shipping_charge(doc, shipping_cost, shipping_rule)
+
+        log(f"Re-calculate taxes and totals")
+        doc.calculate_taxes_and_totals()
+        update_payment_schedule_for_delivery(doc)
+        doc.save(ignore_permissions=True)
 
         log(
-            f"Updated {doc.name}.custom_delivery_distance_km "
-            f"(distance: {distance} km)"
+            f"Saved quotation {doc.name} "
+            f"(include_shipping={doc.custom_include_shipping}, "
+            f"distance={distance} km, shipping_fee={shipping_cost})"
         )
 
-        if doc.shipping_address_name and distance == 0:
-            warning = _("Shipping calculation failed. Please check the shipping address.")
-            log(warning)
-
-        else:
-            price_per_km = flt(shipping_rule.shipping_amount)
-            shipping_cost = distance * price_per_km
-
-            log(
-                f"Shipping rule '{shipping_rule.name}': "
-                f"€{price_per_km}/km × {distance} km = €{shipping_cost}"
-            )
-    
-    log(f"Updating shipping charge")
-    doc.custom_shipping_fee = shipping_cost
-    update_shipping_charge(doc, shipping_cost, shipping_rule)
-
-    log(f"Re-calculate taxes and totals")
-    doc.calculate_taxes_and_totals()
-    update_payment_schedule_for_delivery(doc)
-    doc.save(ignore_permissions=True)
-
-    log(
-        f"Saved quotation {doc.name} "
-        f"(include_shipping={doc.custom_include_shipping}, "
-        f"distance={distance} km, shipping_fee={shipping_cost})"
-    )
-
-    return {
-        "grand_total": doc.grand_total,
-        "shipping_fee": shipping_cost,
-        "warning": warning
-    }
-
+        return {
+            "grand_total": doc.grand_total,
+            "shipping_fee": shipping_cost,
+            "warning": warning
+        }
+    except Exception as e:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "update_shipping failed"
+        )
+        frappe.throw(_("Unable to update shipping. Please try again."))
 
