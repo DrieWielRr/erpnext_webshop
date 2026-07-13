@@ -12,6 +12,7 @@
 
 import json
 import requests
+import re
 
 import frappe
 from frappe.utils import cint, flt, add_days, nowdate, getdate, date_diff
@@ -30,10 +31,19 @@ OSRM_URL = "https://router.project-osrm.org/route/v1/driving"
 # HELPERS
 # --------------------------------------------------------------------
 
+def clean_address_line(address_line):
+    if not address_line:
+        return address_line
+
+    # Remove letter additions from the end of a house number
+    # Examples: 1A -> 1, 12B -> 12, 123AB -> 123
+    return re.sub(r'(\d+)[A-Za-z]+$', r'\1', address_line.strip())
+
+
 def build_address(address):
     return ", ".join(filter(None, [
-        address.address_line1,
-        address.address_line2,
+        clean_address_line1(address.address_line1),
+        clean_address_line1(address.address_line2),
         address.pincode,
         address.city,
         address.country,
