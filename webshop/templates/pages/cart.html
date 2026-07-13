@@ -133,6 +133,8 @@
 							const $dateInput = $('#delivery-date');
 							const $dateContainer = $('#delivery-date-container');
 							const $btnSubmit = $('.btn-request-for-quotation');
+							const $sameBillingContainer = $('.checkbox.ml-1.mb-2');
+
 							
 							// update datepicker minimum date
 							const minDate = new Date();
@@ -144,10 +146,22 @@
 
 							// Check if submit can be allowed
 							function validateFormState() {
+								const includeShipping = $checkbox.is(':checked');
 								const hasDate = !!$dateInput.val();
 
+								// Delivery date is required before continuing
 								$btnSubmit.prop('disabled', !hasDate);
+
+								// Cannot select shipping until a delivery date exists
 								$checkbox.prop('disabled', !hasDate);
+
+								// If shipping is disabled because there is no date, reset it
+								if (!hasDate) {
+									$checkbox.prop('checked', false);
+								}
+
+								// Disable "billing same as delivery" when shipping is selected
+								$sameBillingCheckbox.prop('disabled', includeShipping);
 							}
 
 							// Central function to send the changes to the server
