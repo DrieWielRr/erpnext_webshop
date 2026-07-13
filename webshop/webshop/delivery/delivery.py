@@ -403,7 +403,7 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
         selected_date = getdate(delivery_date)
         minimum_date = add_days(getdate(), 1)
 
-        if selected_date < minimum_date:
+        if delivery_date and selected_date < minimum_date:
             frappe.throw(
                 _("The earliest available delivery date is {0}.").format(minimum_date)
             )
