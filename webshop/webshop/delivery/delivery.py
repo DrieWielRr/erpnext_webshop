@@ -447,7 +447,7 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
             else:
                 price_per_km = flt(shipping_rule.shipping_amount)
-                shipping_cost = distance * price_per_km
+                shipping_cost = (distance * price_per_km) * 2 #roundtrip
 
                 log(
                     f"Shipping rule '{shipping_rule.name}': "
