@@ -111,7 +111,7 @@ if (!window.ItemConfigurations) {
 						tag.className = "tag";
 						tag.setAttribute("data-raw-value", v.value);
 						
-						const priceText = v.custom_price > 0 ? ` (+€${v.custom_price})` : "";   
+						const priceText = v.custom_price != 0 ? ` (${v.custom_price > 0 ? "+" : "-"}€${Math.abs(v.custom_price)})` : "";            
 						tag.textContent = (window.translate ? translate(v.value, true) : v.value) + priceText;
 
 						tag.onclick = () => {
@@ -168,7 +168,7 @@ if (!window.ItemConfigurations) {
 
 						if (!allowCustom) {
 							if (combo._selected) {
-								const priceText = combo._selected.custom_price > 0 ? ` (+€${combo._selected.custom_price})` : "";
+								const priceText = combo._selected.custom_price != 0 ? ` (${combo._selected.custom_price > 0 ? "+" : "-"}€${Math.abs(combo._selected.custom_price)})` : "";
 								input.value = (window.translate ? translate(combo._selected.value, true) : combo._selected.value) + priceText;
 							} else {
 								input.value = "";
