@@ -77,8 +77,8 @@ def validate_config(config):
             except Exception:
                 frappe.throw("Invalid price value")
 
-            if c["price"] < 0:
-                frappe.throw("Price cannot be negative")
+            #if c["price"] < 0:
+            #    frappe.throw("Price cannot be negative")
 
     return config
 
