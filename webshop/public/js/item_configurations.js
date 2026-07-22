@@ -55,7 +55,7 @@ if (!window.ItemConfigurations) {
 						div.setAttribute("data-raw-value", v.value);                     
 						div.setAttribute("data-customPrice-value", v.value);
 
-						const priceText = v.custom_price > 0 ? ` (+€${v.custom_price})` : "";               
+						const priceText = v.custom_price != 0 ? ` (${v.custom_price > 0 ? "+" : "-"}€${Math.abs(v.custom_price)})` : "";            
 						div.textContent = (window.translate ? translate(v.value, true) : v.value) + priceText;
 
 						div.onclick = () => {
