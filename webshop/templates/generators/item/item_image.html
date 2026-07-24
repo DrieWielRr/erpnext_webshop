@@ -1,16 +1,36 @@
 {% set column_size = 5 if slides else 4 %}
 
-
 <style>
+	/* Prevent the outer column flex container from causing horizontal layout blowout */
+	.col-md-{{ column_size }}.d-flex {
+		flex-direction: column;
+	}
+
+	.product-carousel {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0; /* Prevents flex child from expanding past column width */
+	}
+
+	/* Main Image Box: Standardized to max 200x200px to stop layout shifts */
 	.product-carousel-main {
 		width: 100%;
+		height: 400px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f8f9fa; /* Optional background for padding transparent/smaller images */
+		border-radius: 6px;
+		overflow: hidden;
 	}
 
 	.product-carousel-image {
 		display: none;
+		max-width: 400px;
+		max-height: 400px;
 		width: 100%;
-		height: auto;
-		object-fit: contain;
+		height: 100%;
+		object-fit: contain; /* Prevents distortion & maintains aspect ratio within 200x200 */
 		cursor: zoom-in;
 	}
 
@@ -22,43 +42,45 @@
 		display: flex;
 		align-items: center;
 		width: 100%;
-		gap: 10px;
+		gap: 8px;
 		margin-top: 12px;
 	}
 
-	/* arrows always at edges */
+	/* Nav buttons fixed size */
 	.carousel-prev,
 	.carousel-next {
-		flex: 0 0 40px;
-		height: 70px;
+		flex: 0 0 32px;
+		width: 32px;
+		height: 60px;
 		border: none;
 		background: transparent;
-		font-size: 36px;
+		font-size: 28px;
 		cursor: pointer;
-
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 0;
+		user-select: none;
 	}
 
-	/* Allow thumbnails to scroll horizontally smoothly without forcing the container wide */
+	/* Thumbnails scrollable viewport */
 	.product-carousel-thumbs {
-		flex: 1;
-		min-width: 0;
+		flex: 1 1 0%;
+		min-width: 0; /* Crucial: allows thumbnail container to shrink below content width */
 		display: flex;
 		gap: 8px;
-		overflow-x: auto; /* Enable horizontal scrolling */
-		scroll-behavior: smooth; /* Smooth scroll on click */
+		overflow-x: auto;
+		scroll-behavior: smooth;
 		scrollbar-width: none; /* Hide scrollbar Firefox */
+		-ms-overflow-style: none; /* Hide scrollbar IE/Edge */
 	}
 
 	.product-carousel-thumbs::-webkit-scrollbar {
 		display: none; /* Hide scrollbar Chrome/Safari */
 	}
 
-	/* Allow thumbnails to shrink dynamically if space is limited, or scroll if many */
 	.product-carousel-thumb {
-		flex: 0 0 auto; /* Prevent stretching/squishing disproportionately */
+		flex: 0 0 60px;
 		width: 60px;
 		height: 60px;
 		object-fit: cover;
@@ -71,7 +93,7 @@
 
 	.product-carousel-thumb.active {
 		opacity: 1;
-		border-color: var(--primary);
+		border-color: var(--primary, #007bff);
 	}
 
 	.image-zoom-view {
@@ -103,7 +125,6 @@
 	}
 </style>
 
-
 <div class="col-md-{{ column_size }} h-100 d-flex mb-4">
 
 	{% if slides %}
@@ -130,7 +151,7 @@
 		<!-- Thumbnail navigation -->
 		<div class="product-carousel-navigation">
 
-			<button class="carousel-prev">
+			<button type="button" class="carousel-prev" aria-label="Previous">
 				‹
 			</button>
 
@@ -151,7 +172,7 @@
 			</div>
 
 
-			<button class="carousel-next">
+			<button type="button" class="carousel-next" aria-label="Next">
 				›
 			</button>
 
@@ -177,7 +198,6 @@
 		</button>
 	</div>
 
-
 </div>
 
 
@@ -185,56 +205,12 @@
 	frappe.ready(() => {
 		document.querySelectorAll(".product-carousel").forEach(carousel => {
 
-			const images = carousel.querySelectorAll(
-				".product-carousel-image"
-			);
-
-			const thumbs = carousel.querySelectorAll(
-				".product-carousel-thumb"
-			);
-
-			const zoomWrapper = document.querySelector(				
-				".image-zoom-view"
-			);
-
-			const mainImages =
-				carousel.querySelectorAll(
-					".product-carousel-image"
-				);
-
-
-			mainImages.forEach(image => {
-
-				image.addEventListener(
-					"click",
-					() => {
-
-						if (!zoomWrapper) {
-							return;
-						}
-
-						zoomWrapper.innerHTML = `
-							<button type="button" class="close">
-								×
-							</button>
-							<img src="${image.src}">
-						`;
-
-						zoomWrapper.style.display = "flex";
-
-
-						zoomWrapper
-							.querySelector(".close")
-							.onclick = () => {
-								zoomWrapper.style.display = "none";
-							};
-					}
-				);
-
-			});
+			const images = carousel.querySelectorAll(".product-carousel-image");
+			const thumbs = carousel.querySelectorAll(".product-carousel-thumb");
+			const thumbsContainer = carousel.querySelector(".product-carousel-thumbs");
+			const zoomWrapper = document.querySelector(".image-zoom-view");
 
 			let current = 0;
-			const thumbsContainer = carousel.querySelector(".product-carousel-thumbs");
 
 			function activate(index) {
 				if (!images[index]) return;
@@ -245,7 +221,7 @@
 				images[index].classList.add("active");
 				thumbs[index].classList.add("active");
 
-				// Automatically scroll active thumbnail into view
+				// Automatically scroll active thumbnail smoothly into view
 				if (thumbsContainer && thumbs[index]) {
 					thumbs[index].scrollIntoView({
 						behavior: "smooth",
@@ -258,60 +234,41 @@
 			}
 
 			thumbs.forEach((thumb, index) => {
-
-				thumb.addEventListener(
-					"click",
-					() => activate(index)
-				);
-
+				thumb.addEventListener("click", () => activate(index));
 			});
 
+			carousel.querySelector(".carousel-prev").onclick = () => {
+				activate(current > 0 ? current - 1 : images.length - 1);
+			};
 
-			carousel
-				.querySelector(".carousel-prev")
-				.onclick = () => {
+			carousel.querySelector(".carousel-next").onclick = () => {
+				activate(current < images.length - 1 ? current + 1 : 0);
+			};
 
-					activate(
-						current > 0
-						? current - 1
-						: images.length - 1
-					);
+			images.forEach(image => {
+				image.addEventListener("click", () => {
+					if (!zoomWrapper) return;
 
-				};
+					zoomWrapper.innerHTML = `
+						<button type="button" class="close">×</button>
+						<img src="${image.src}">
+					`;
+					zoomWrapper.style.display = "flex";
 
-
-			carousel
-				.querySelector(".carousel-next")
-				.onclick = () => {
-
-					activate(
-						current < images.length - 1
-						? current + 1
-						: 0
-					);
-
-				};
+					zoomWrapper.querySelector(".close").onclick = () => {
+						zoomWrapper.style.display = "none";
+					};
+				});
+			});
 		});
 
-		document.addEventListener(
-			"keydown",
-			(e) => {
-
-				if (e.key !== "Escape") {
-					return;
-				}
-
-				const zoomWrapper =
-					document.querySelector(".image-zoom-view");
-
-				if (!zoomWrapper) {
-					return;
-				}
-
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				const zoomWrapper = document.querySelector(".image-zoom-view");
+				if (!zoomWrapper) return;
 				zoomWrapper.style.display = "none";
 				zoomWrapper.innerHTML = "";
-
 			}
-		);
+		});
 	});	
 </script>
