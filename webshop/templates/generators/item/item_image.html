@@ -47,19 +47,19 @@
 		min-width: 0;
 		display: flex;
 		gap: 8px;
-		overflow: hidden;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-behavior: smooth;
+		scrollbar-width: none;
+	}
+
+	.product-carousel-thumbs::-webkit-scrollbar {
+		display: none;
 	}
 
 	/* thumbnails */
 	.product-carousel-thumb {
 		flex: 0 0 70px;
-		width: 70px;
-		height: 70px;
-		object-fit: cover;
-		cursor: pointer;
-		opacity: .5;
-		border: 2px solid transparent;
-		border-radius: 6px;
 	}
 
 	.product-carousel-thumb.active {
@@ -228,26 +228,22 @@
 
 			let current = 0;
 			function activate(index) {
+				if (!images[index]) return;
 
-				if (!images[index]) {
-					return;
-				}
-
-				images.forEach(img =>
-					img.classList.remove("active")
-				);
-
-				thumbs.forEach(img =>
-					img.classList.remove("active")
-				);
-
+				images.forEach(img => img.classList.remove("active"));
+				thumbs.forEach(img => img.classList.remove("active"));
 
 				images[index].classList.add("active");
 				thumbs[index].classList.add("active");
 
+				thumbs[index].scrollIntoView({
+					behavior: "smooth",
+					inline: "center",
+					block: "nearest"
+				});
+
 				current = index;
 			}
-
 
 			thumbs.forEach((thumb, index) => {
 
