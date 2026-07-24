@@ -41,25 +41,32 @@
 		justify-content: center;
 	}
 
-	/* thumbnail area gets everything between arrows */
+	/* Allow thumbnails to scroll horizontally smoothly without forcing the container wide */
 	.product-carousel-thumbs {
 		flex: 1;
 		min-width: 0;
 		display: flex;
 		gap: 8px;
-		overflow-x: auto;
-		overflow-y: hidden;
-		scroll-behavior: smooth;
-		scrollbar-width: none;
+		overflow-x: auto; /* Enable horizontal scrolling */
+		scroll-behavior: smooth; /* Smooth scroll on click */
+		scrollbar-width: none; /* Hide scrollbar Firefox */
 	}
 
 	.product-carousel-thumbs::-webkit-scrollbar {
-		display: none;
+		display: none; /* Hide scrollbar Chrome/Safari */
 	}
 
-	/* thumbnails */
+	/* Allow thumbnails to shrink dynamically if space is limited, or scroll if many */
 	.product-carousel-thumb {
-		flex: 0 0 70px;
+		flex: 0 0 auto; /* Prevent stretching/squishing disproportionately */
+		width: 60px;
+		height: 60px;
+		object-fit: cover;
+		cursor: pointer;
+		opacity: 0.5;
+		border: 2px solid transparent;
+		border-radius: 6px;
+		transition: border-color 0.2s, opacity 0.2s;
 	}
 
 	.product-carousel-thumb.active {
@@ -227,6 +234,8 @@
 			});
 
 			let current = 0;
+			const thumbsContainer = carousel.querySelector(".product-carousel-thumbs");
+
 			function activate(index) {
 				if (!images[index]) return;
 
@@ -236,11 +245,14 @@
 				images[index].classList.add("active");
 				thumbs[index].classList.add("active");
 
-				thumbs[index].scrollIntoView({
-					behavior: "smooth",
-					inline: "center",
-					block: "nearest"
-				});
+				// Automatically scroll active thumbnail into view
+				if (thumbsContainer && thumbs[index]) {
+					thumbs[index].scrollIntoView({
+						behavior: "smooth",
+						block: "nearest",
+						inline: "center"
+					});
+				}
 
 				current = index;
 			}
