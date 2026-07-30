@@ -80,7 +80,7 @@ webshop.ProductList = class {
 			<div class="col-8" style="margin-right: -15px;">
 				<a class="" href="/${ item.route || '#' }"
 					style="color: var(--gray-800); font-weight: 500;">
-					${ title }
+					${ __(title) }
 				</a>
 			</div>
 		`;
