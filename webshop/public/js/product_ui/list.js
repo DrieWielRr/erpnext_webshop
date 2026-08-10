@@ -96,7 +96,7 @@ webshop.ProductList = class {
 	}
 
 	get_item_details(item, settings) {
-		let description =
+		let description = 
 			currentLang === "en"
 				? item.short_description
 				: item.custom_short_description_nl;
