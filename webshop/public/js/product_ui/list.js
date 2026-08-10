@@ -96,8 +96,10 @@ webshop.ProductList = class {
 	}
 
 	get_item_details(item, settings) {
+		const lang = (document.documentElement.lang || "en").toLowerCase();
+
 		let description = 
-			currentLang === "en"
+			lang.startsWith("en")
 				? item.short_description
 				: item.custom_short_description_nl;
 
