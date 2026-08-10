@@ -57,9 +57,11 @@
 				<p>
 					{% if doc.valid_till %}
 							{{ _("Valid Till") }}: {{ frappe.utils.format_date(doc.valid_till, 'medium') }}
+							<br>
 					{% endif %}
 					{% if doc.custom_delivery_date %}
 							{{ _("Delivery Date") }}: {{ frappe.utils.format_date(doc.custom_delivery_date, 'medium') }}
+							<br>
 					{% endif %}
 					{{ _("Include shipping") }}: {{ _("Yes") if doc.custom_include_shipping else _("No") }}
 				</p>
