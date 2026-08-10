@@ -66,8 +66,8 @@ webshop.ProductList = class {
 		return image_html;
 	}
 
-	get_row_body_html(item, title, settings) {
-		let body_html = `<div class='col-10 text-left'>`;
+	get_row_body_html(item, title, settings) {		
+		let body_html = `<div class='col-10 text-left'>`; 
 		body_html += this.get_title_html(item, title, settings);
 		body_html += this.get_item_details(item, settings);
 		body_html += `</div>`;
