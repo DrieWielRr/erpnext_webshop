@@ -56,14 +56,14 @@ if (!window.ItemConfigurations) {
 						div.setAttribute("data-customPrice-value", v.value);
 
 						const priceText = v.custom_price != 0 ? ` (${v.custom_price > 0 ? "+" : "-"}€${Math.abs(v.custom_price)})` : "";            
-						div.textContent = (window.translate ? translate(v.value, true) : v.value) + priceText;
+						div.textContent = (window.__ ? __(v.value, true) : v.value) + priceText;
 
 						div.onclick = () => {
 							if (allowMulti) {
 								const max = Number(combo.dataset.max || 0);
 								if (max > 0 && combo._selected.length >= max) {
 									frappe.show_alert({
-										message: `${window.translate ? translate('You can only select') : 'You can only select'} ${max} ${window.translate ? translate('items for') : 'items for'} "${window.translate ? translate(attrName, true) : attrName}"`,
+										message: `${window.__ ? __('You can only select') : 'You can only select'} ${max} ${window.__ ? __('items for') : 'items for'} "${window.__ ? __(attrName, true) : attrName}"`,
 										indicator: "orange"
 									});
 									return;
@@ -82,7 +82,7 @@ if (!window.ItemConfigurations) {
 
 							combo._selected = v; 
 							input.dataset.rawValue = v.value;
-							input.value = (window.translate ? translate(v.value, true) : v.value) + priceText; 
+							input.value = (window.__ ? __(v.value, true) : v.value) + priceText; 
 
 							updateClearVisibility();
 							dropdown.style.display = "none";
@@ -112,7 +112,7 @@ if (!window.ItemConfigurations) {
 						tag.setAttribute("data-raw-value", v.value);
 						
 						const priceText = v.custom_price != 0 ? ` (${v.custom_price > 0 ? "+" : "-"}€${Math.abs(v.custom_price)})` : "";            
-						tag.textContent = (window.translate ? translate(v.value, true) : v.value) + priceText;
+						tag.textContent = (window.__ ? __(v.value, true) : v.value) + priceText;
 
 						tag.onclick = () => {
 							combo._selected = combo._selected.filter(x => x.value !== v.value);
@@ -169,7 +169,7 @@ if (!window.ItemConfigurations) {
 						if (!allowCustom) {
 							if (combo._selected) {
 								const priceText = combo._selected.custom_price != 0 ? ` (${combo._selected.custom_price > 0 ? "+" : "-"}€${Math.abs(combo._selected.custom_price)})` : "";
-								input.value = (window.translate ? translate(combo._selected.value, true) : combo._selected.value) + priceText;
+								input.value = (window.__ ? __(combo._selected.value, true) : combo._selected.value) + priceText;
 							} else {
 								input.value = "";
 							}

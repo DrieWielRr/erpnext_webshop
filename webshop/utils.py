@@ -80,7 +80,7 @@ def translation_export(lang):
 
     log(f"[translation_export] Found {len(rows)} translation rows for {lang}")
     data = {
-        r.source_text.lower().strip(): r.translated_text
+        r.source_text: r.translated_text
         for r in rows
         if r.translated_text
     }

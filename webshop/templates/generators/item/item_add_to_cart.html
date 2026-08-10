@@ -208,7 +208,7 @@
 							}
 							
 							// Update UOM price
-							pricePerUOMElement.textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+							pricePerUOMElement.textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${ window.__ ? __('minqty'): 'minqty' }: ${initialQty}))`;
 																												
 							log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
 						} else {
@@ -244,7 +244,7 @@
 				}
 				
 				// Update UOM price
-				document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${translate('minqty')}: ${initialQty}))`;
+				document.getElementById('pricePerUOM').textContent = `(${currency} ${basePrice.toFixed(2)} / ${uom} (${window.__ ? __('minqty') : 'minqty'}: ${initialQty}))`;
 																									
 				log(`[UpdatePricing] UI Updated: Multiplier applied (${multiplier}x)`);
 			} else {
