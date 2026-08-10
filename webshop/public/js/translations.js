@@ -11,6 +11,7 @@ async function loadTranslations() {
 
         translations = await langRes.json();
         fallbackTranslations = await enRes.json();
+        frappe._messages = translations;
 
         console.log(
             `[translations] loaded ${currentLang}: ${Object.keys(translations).length} entries`
