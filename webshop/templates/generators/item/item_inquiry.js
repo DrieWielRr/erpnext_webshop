@@ -25,6 +25,7 @@ function waitForTranslations(timeout = 5000) {
 
 
 frappe.ready(() => {
+	console.log("Translations loading..");
 	waitForTranslations()
 		.then(() => {
 			console.log("Translations ready:", frappe._messages);
