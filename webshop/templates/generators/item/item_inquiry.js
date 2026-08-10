@@ -1,4 +1,6 @@
 frappe.ready(() => {
+	await loadTranslations();
+
 	const d = new frappe.ui.Dialog({
 		title: __('Contact Us'),
 		fields: [
