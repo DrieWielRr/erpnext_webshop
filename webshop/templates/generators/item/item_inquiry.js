@@ -1,5 +1,15 @@
-function waitForTranslations(timeout = 5000) {
-	return new Promise((resolve, reject) => {
+let translationsWaitPromise = null;
+
+function waitForTranslations(timeout = 2000) {
+	if (frappe._messages && Object.keys(frappe._messages).length > 0) {
+		return Promise.resolve();
+	}
+
+	if (translationsWaitPromise) {
+		return translationsWaitPromise;
+	}
+
+	translationsWaitPromise = new Promise((resolve, reject) => {
 		const start = Date.now();
 
 		const check = () => {
@@ -20,14 +30,20 @@ function waitForTranslations(timeout = 5000) {
 		};
 
 		check();
+	}).catch(err => {
+		translationsWaitPromise = null;
+		throw err;
 	});
+
+	return translationsWaitPromise;
 }
+
 
 
 frappe.ready(() => {	
 	waitForTranslations()
 		.then(() => {
-			console.log("Translations ready:", frappe._messages);
+			console.log("Translations ready");
 			const d = new frappe.ui.Dialog({
 				title: __('Contact Us'),
 				fields: [
@@ -95,7 +111,7 @@ frappe.ready(() => {
 			$('.btn-inquiry').click((e) => {
 				const $btn = $(e.target);
 				const item_code = $btn.data('item-code');
-				d.set_value('subject', 'Inquiry about ' + item_code);
+				d.set_value('subject', __('Inquiry about') + ' ' + item_code);
 				if (!['Administrator', 'Guest'].includes(frappe.session.user)) {
 					d.set_value('email_id', frappe.session.user);
 					d.set_value('lead_name', frappe.get_cookie('full_name'));
