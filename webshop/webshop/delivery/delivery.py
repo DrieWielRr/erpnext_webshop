@@ -395,6 +395,11 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
     try:
         doc = frappe.get_doc("Quotation", quotation)
 
+        # Shipping can be changed after the quotation is submitted.
+        # This method intentionally updates the shipping tax row and totals.
+        if doc.docstatus == 1:
+            doc.flags.ignore_validate_update_after_submit = True
+
         doc.custom_include_shipping = cint(include_shipping)
 
         if doc.custom_include_shipping and not delivery_date:
