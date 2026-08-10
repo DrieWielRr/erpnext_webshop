@@ -1,5 +1,33 @@
+function waitForTranslations(timeout = 5000) {
+	return new Promise((resolve, reject) => {
+		const start = Date.now();
+
+		const check = () => {
+			if (
+				frappe._messages &&
+				Object.keys(frappe._messages).length > 0
+			) {
+				resolve();
+				return;
+			}
+
+			if (Date.now() - start >= timeout) {
+				reject(new Error("Translations did not load in time"));
+				return;
+			}
+
+			setTimeout(check, 50);
+		};
+
+		check();
+	});
+}
+
+
 frappe.ready(() => {
-	await loadTranslations();
+	waitForTranslations()
+		.then(() => {
+			console.log("Translations ready:", frappe._messages);
 
 	const d = new frappe.ui.Dialog({
 		title: __('Contact Us'),
