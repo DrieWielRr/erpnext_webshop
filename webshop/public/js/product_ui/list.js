@@ -97,7 +97,7 @@ webshop.ProductList = class {
 
 	get_item_details(item, settings) {
 		let description =
-			frappe.lang === "en"
+			currentLang === "en"
 				? item.short_description
 				: item.custom_short_description_nl;
 
