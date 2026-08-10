@@ -36,9 +36,9 @@
 							<label class="config-label">{{ _(attr_name) }} ({{ _('Select or input your wishes') }})</label>
 						{% elif is_multi == 1 %}
 							{% if max_select == -1 %}
-								<label class="config-label">{{ _(attr_name) }} ({{ _("Select any number of items") }}):</label>
+								<label class="config-label">{{ _(attr_name) }} ({{ _("Select any number of options") }}):</label>
 							{% else %}
-								<label class="config-label">{{ _(attr_name) }} ({{ _('Select up to') }} {{ max_select }} {{ _('items') }}):</label>
+								<label class="config-label">{{ _(attr_name) }} ({{ _('Select up to') }} {{ max_select }} {{ _('options') }}):</label>
 							{% endif %}							
 						{% else %}
 							<label class="config-label">{{ _(attr_name) }}:</label>
