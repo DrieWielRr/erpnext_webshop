@@ -133,56 +133,84 @@ def update_shipping_charge(doc, shipping_cost, shipping_rule):
 
 def update_payment_schedule_for_delivery(quotation):
     """
-    Update payment schedule based on delivery date.
+    Update payment schedule based on delivery date AND recalculate payment amounts
+    for the new grand total.
 
     Payment Terms:
     - 50% Advance: 1/3th of days_until_delivery
     - Before Delivery: due date calculated from today until delivery date
     """
+    schedule = quotation.get("payment_schedule") or []
+    grand_total = flt(quotation.grand_total, 2)
 
-    if not quotation.custom_delivery_date:
-        log("Payment schedule: no delivery date set, skipping delivery calculation")
+    if not schedule or grand_total <= 0:
         return
 
-    today = getdate(nowdate())
-    delivery_date = getdate(quotation.custom_delivery_date)
+    # Detach template so ERPNext core won't reset numbers on save
+    quotation.payment_terms_template = None
 
-    days_until_delivery = max(date_diff(delivery_date, today), 0)
-    advance_days = max(days_until_delivery, 0) // 3
+    # Recalculate payment_amount for each row using NEW grand_total
+    previous_total = 0.0
 
-    log(
-        f"Payment schedule calculation: "
-        f"today={today}, delivery_date={delivery_date}, "
-        f"advance_days={advance_days}"
-        f"days_until_delivery={days_until_delivery}"
-    )
+    # Recalculate all terms except the last
+    for term in schedule[:-1]:
+        portion = flt(term.invoice_portion) or 50.0
+        term.payment_amount = flt((grand_total * portion) / 100, 2)
+        previous_total += term.payment_amount
 
-    for row in quotation.payment_schedule:
+    # Recalculate the last term (uses exact remaining balance if custom flag set)
+    if quotation.get("custom_final_payment_is_balance") and len(schedule) >= 2:
+        remaining = flt(grand_total - previous_total, 2)
+        schedule[-1].payment_amount = max(remaining, 0.0)
+        schedule[-1].invoice_portion = flt((schedule[-1].payment_amount / grand_total) * 100, 2)
+    else:
+        last_portion = flt(schedule[-1].invoice_portion) or 50.0
+        schedule[-1].payment_amount = flt((grand_total * last_portion) / 100, 2)
+
+    # Update Due Dates & Credit Days (Your existing logic)
+    if quotation.custom_delivery_date:
+        today = getdate(nowdate())
+        delivery_date = getdate(quotation.custom_delivery_date)
+
+        days_until_delivery = max(date_diff(delivery_date, today), 0)
+        advance_days = days_until_delivery // 3
+
         log(
-            f"Payment term found: {row.payment_term}, "
-            f"current credit_days={row.credit_days}"
+            f"Payment schedule calculation: "
+            f"today={today}, delivery_date={delivery_date}, "
+            f"advance_days={advance_days}, "
+            f"days_until_delivery={days_until_delivery}"
         )
 
-        if row.payment_term == "Before Delivery":
-            row.credit_days = days_until_delivery
-            row.due_date = delivery_date
+        for row in schedule:
+            term_name = cstr(row.payment_term or row.description or "")
 
-            log(
-                f"Updated payment term '{row.payment_term}': "
-                f"credit_days={row.credit_days}, "
-                f"due_date={row.due_date}"
-            )
+            if term_name == "Before Delivery":
+                row.credit_days = days_until_delivery
+                row.due_date = delivery_date
 
-        elif row.payment_term == "50% Advance":
-            row.credit_days = advance_days
-            row.due_date = add_days(today, advance_days)
+                log(
+                    f"Updated payment term '{row.payment_term}': "
+                    f"credit_days={row.credit_days}, "
+                    f"due_date={row.due_date}, "
+                    f"payment_amount={row.payment_amount}"
+                )
 
-            log(
-                f"Updated payment term '{row.payment_term}': "
-                f"credit_days={row.credit_days}, "
-                f"due_date={row.due_date}"
-            )
+            elif term_name == "50% Advance":
+                row.credit_days = advance_days
+                row.due_date = add_days(today, advance_days)
 
+                log(
+                    f"Updated payment term '{row.payment_term}': "
+                    f"credit_days={row.credit_days}, "
+                    f"due_date={row.due_date}, "
+                    f"payment_amount={row.payment_amount}"
+                )
+    else:
+        log("Payment schedule: no delivery date set, skipped date calculations")
+
+    # Force ORM change detection
+    quotation.set("payment_schedule", schedule)
 
 
 
@@ -398,8 +426,6 @@ def update_delivery_distance(doc, method=None):
     log("=== UPDATE DELIVERY DISTANCE END ===")
     log("")
     return distance
-
-
 
 
 @frappe.whitelist()
