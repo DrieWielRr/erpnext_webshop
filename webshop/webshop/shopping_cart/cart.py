@@ -12,6 +12,7 @@ from frappe.contacts.doctype.contact.contact import get_contact_name
 from frappe.utils import cint, cstr, flt, get_fullname, add_days, nowdate
 from frappe.utils.nestedset import get_root_of
 from webshop.utils import log
+from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
 
 from erpnext.accounts.utils import get_account_name
 from webshop.webshop.doctype.webshop_settings.webshop_settings import (
@@ -1231,9 +1232,7 @@ def show_terms(doc):
 
 
 @frappe.whitelist(allow_guest=True)
-def apply_coupon_code(applied_code, applied_referral_sales_partner):
-    quotation = True
-
+def apply_coupon_code(applied_code, applied_referral_sales_partner=None):
     if not applied_code:
         frappe.throw(_("Please enter a coupon code"))
 
@@ -1243,9 +1242,10 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
 
     coupon_name = coupon_list[0].name
 
-    from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
-
+    # Validate coupon limits/dates
     validate_coupon_code(coupon_name)
+
+    # Fetch the shopping cart quotation doc
     quotation = _get_cart_quotation()
     quotation.ignore_pricing_rule = 0
     quotation.coupon_code = coupon_name
@@ -1255,13 +1255,21 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
             "Sales Partner", filters={"referral_code": applied_referral_sales_partner}
         )
         if sales_partner_list:
-            sales_partner_name = sales_partner_list[0].name
-            quotation.referral_sales_partner = sales_partner_name
+            quotation.referral_sales_partner = sales_partner_list[0].name
 
-    # RECALCULATE
-    quotation.apply_pricing_rule()
+    # --- RECALCULATION ENGINE ---
+    # 1. Reset pricing rule state on items so ERPNext re-evaluates them from scratch
+    for item in quotation.items:
+        item.pricing_rules = None
+        item.discount_percentage = 0.0
+
+    # 2. Trigger ERPNext's built-in item re-evaluation
+    quotation.set_missing_values()
+    
+    # 3. Recalculate net rates, taxes, and grand total
     quotation.calculate_taxes_and_totals()
 
+    # 4. Save bypass permissions
     quotation.flags.ignore_permissions = True
     quotation.save()
 
