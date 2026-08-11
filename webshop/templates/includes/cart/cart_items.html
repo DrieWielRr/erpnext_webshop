@@ -22,7 +22,7 @@
 	<tr
 		data-name="{{ d.name }}"
 		data-item-code="{{ d.item_code }}"		
-		data-configuration='{{ d.custom_item_configurations or "[]" }}'>
+		data-configuration='{{ d.custom_item_configurations | e or "[]" }}'>
 		<td style="width: 60%;">
 			<div class="d-flex">
 				<div class="cart-item-image mr-4">
