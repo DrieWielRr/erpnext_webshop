@@ -1237,7 +1237,7 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
 
     coupon_list = frappe.get_all(
         "Coupon Code",
-        filters={"coupon_code": applied_code}
+        filters={"coupon_code": applied_code},
     )
 
     if not coupon_list:
@@ -1246,26 +1246,31 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
     coupon_name = coupon_list[0].name
 
     from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
+
     validate_coupon_code(coupon_name)
 
     quotation = _get_cart_quotation()
 
+    quotation.flags.ignore_permissions = True
     quotation.ignore_pricing_rule = 0
     quotation.coupon_code = coupon_name
 
     if applied_referral_sales_partner:
-        sales_partner_list = frappe.get_all(
+        sales_partner = frappe.db.get_value(
             "Sales Partner",
-            filters={"referral_code": applied_referral_sales_partner}
+            {"referral_code": applied_referral_sales_partner},
+            "name",
         )
 
-        if sales_partner_list:
-            quotation.referral_sales_partner = sales_partner_list[0].name
+        if sales_partner:
+            quotation.referral_sales_partner = sales_partner
 
-    quotation.flags.ignore_permissions = True
+    # IMPORTANT:
+    # This actually evaluates the Pricing Rules against the items.
+    quotation.set_missing_item_details()
 
-    # Recalculate pricing rules / totals
-    quotation.run_method("calculate_taxes_and_totals")
+    # Now recalculate totals using the updated item rates/discounts.
+    quotation.calculate_taxes_and_totals()
 
     quotation.save()
 
