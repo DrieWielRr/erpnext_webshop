@@ -153,7 +153,7 @@ def update_payment_schedule_for_delivery(quotation):
     log(
         f"Payment schedule calculation: "
         f"today={today}, delivery_date={delivery_date}, "
-        f"advance_days={advance_days}",
+        f"advance_days={advance_days}"
         f"days_until_delivery={days_until_delivery}"
     )
 
