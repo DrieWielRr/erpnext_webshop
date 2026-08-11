@@ -1255,6 +1255,28 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
     quotation.ignore_pricing_rule = 0
     quotation.coupon_code = coupon_name
 
+    from erpnext.accounts.doctype.pricing_rule.utils import (
+        apply_pricing_rule_on_transaction,
+    )
+    
+    log("BEFORE APPLY")
+    log("discount_amount = " + str(quotation.discount_amount))
+    log("additional_discount_percentage = " + str(
+        quotation.additional_discount_percentage
+    ))
+    log("net_total = " + str(quotation.net_total))
+    log("grand_total = " + str(quotation.grand_total))
+
+    apply_pricing_rule_on_transaction(quotation)
+
+    log("AFTER APPLY")
+    log("discount_amount = " + str(quotation.discount_amount))
+    log("additional_discount_percentage = " + str(
+        quotation.additional_discount_percentage
+    ))
+    log("net_total = " + str(quotation.net_total))
+    log("grand_total = " + str(quotation.grand_total))
+
     if applied_referral_sales_partner:
         sales_partner = frappe.db.get_value(
             "Sales Partner",
@@ -1272,8 +1294,31 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
     # Now recalculate totals using the updated item rates/discounts.
     quotation.calculate_taxes_and_totals()
 
-    quotation.save()
+    log("PRICING RULE:")
+    log(
+        frappe.db.get_value(
+            "Pricing Rule",
+            "PRLE-0005",
+            [
+                "apply_on",
+                "coupon_code_based",
+                "selling",
+                "applicable_for",
+                "customer_group",
+                "for_price_list",
+                "company",
+                "currency",
+                "valid_from",
+                "valid_upto",
+                "rate_or_discount",
+                "discount_percentage",
+                "apply_discount_on",
+            ],
+            as_dict=True,
+        )
+    )
 
+    quotation.save()    
     return quotation
 
  
