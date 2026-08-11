@@ -37,7 +37,7 @@
 
 				<!-- Price per UOM -->
 				<small class="formatted-price ml-2" id="pricePerUOM">
-					({{ price_info.formatted_price }} / {{ product_info.uom }})
+					({{ price_info.formatted_price }} / {{ _("_Nos") if product_info.uom == "Nos" else product_info.uom }} )
 				</small>
 			</div>
 		{% else %}
