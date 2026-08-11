@@ -181,7 +181,7 @@
 						basePrice = parseFloat(parseCurrency(container.dataset.basePrice));
 						mrpPrice = parseFloat(parseCurrency(container.dataset.mrp));
 						uom = container.dataset.uom;
-						displayUom = uom === "Nos" ? _("_Nos") : uom;
+						displayUom = uom === "Nos" ? __("_Nos") : uom;
 						currency = container.dataset.currency;
 						
 						// Logic: Multiplier is 1 if in cart, otherwise it is your initial_qty
