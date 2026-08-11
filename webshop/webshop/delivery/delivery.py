@@ -136,7 +136,7 @@ def update_payment_schedule_for_delivery(quotation):
     Update payment schedule based on delivery date.
 
     Payment Terms:
-    - 50% Advance: unchanged
+    - 50% Advance: 1/3th of days_until_delivery
     - Before Delivery: due date calculated from today until delivery date
     """
 
@@ -147,11 +147,13 @@ def update_payment_schedule_for_delivery(quotation):
     today = getdate(nowdate())
     delivery_date = getdate(quotation.custom_delivery_date)
 
-    days_until_delivery = date_diff(delivery_date, today)
+    days_until_delivery = max(date_diff(delivery_date, today), 0)
+    advance_days = max(days_until_delivery, 0) // 3
 
     log(
         f"Payment schedule calculation: "
         f"today={today}, delivery_date={delivery_date}, "
+        f"advance_days={advance_days}",
         f"days_until_delivery={days_until_delivery}"
     )
 
@@ -162,10 +164,20 @@ def update_payment_schedule_for_delivery(quotation):
         )
 
         if row.payment_term == "Before Delivery":
-            row.credit_days = max(days_until_delivery, 0)
+            row.credit_days = days_until_delivery
             row.due_date = delivery_date
 
-            log(
+            frappe.logger().info(
+                f"Updated payment term '{row.payment_term}': "
+                f"credit_days={row.credit_days}, "
+                f"due_date={row.due_date}"
+            )
+
+        elif row.payment_term == "50% Advance":
+            row.credit_days = advance_days
+            row.due_date = add_days(today, advance_days)
+
+            frappe.logger().info(
                 f"Updated payment term '{row.payment_term}': "
                 f"credit_days={row.credit_days}, "
                 f"due_date={row.due_date}"
