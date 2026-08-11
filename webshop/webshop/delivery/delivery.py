@@ -167,7 +167,7 @@ def update_payment_schedule_for_delivery(quotation):
             row.credit_days = days_until_delivery
             row.due_date = delivery_date
 
-            frappe.logger().info(
+            log(
                 f"Updated payment term '{row.payment_term}': "
                 f"credit_days={row.credit_days}, "
                 f"due_date={row.due_date}"
@@ -177,7 +177,7 @@ def update_payment_schedule_for_delivery(quotation):
             row.credit_days = advance_days
             row.due_date = add_days(today, advance_days)
 
-            frappe.logger().info(
+            log(
                 f"Updated payment term '{row.payment_term}': "
                 f"credit_days={row.credit_days}, "
                 f"due_date={row.due_date}"
