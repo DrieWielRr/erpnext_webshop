@@ -1258,20 +1258,24 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner=None):
             quotation.referral_sales_partner = sales_partner_list[0].name
 
     # --- RECALCULATION ENGINE ---
-    # 1. Reset pricing rule state on items so ERPNext re-evaluates them from scratch
+    # Reset pricing rule state on items so ERPNext re-evaluates them from scratch
     for item in quotation.items:
         item.pricing_rules = None
         item.discount_percentage = 0.0
 
-    # 2. Trigger ERPNext's built-in item re-evaluation
+    # Trigger ERPNext's built-in item re-evaluation
     quotation.set_missing_values()
     
-    # 3. Recalculate net rates, taxes, and grand total
+    # Recalculate net rates, taxes, and grand total
     quotation.calculate_taxes_and_totals()
 
-    # 4. Save bypass permissions
+    # Save with explicit permission bypass flags
     quotation.flags.ignore_permissions = True
-    quotation.save()
+    quotation.flags.ignore_mandatory = True
+    quotation.save(ignore_permissions=True)
+
+    #Reset global flag
+    frappe.flags.ignore_permissions = False
 
     return quotation
 
