@@ -16,7 +16,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, add_days, nowdate, getdate, date_diff
+from frappe.utils import cint, cstr, flt, add_days, nowdate, getdate, date_diff
 from webshop.utils import log
 
 # --------------------------------------------------------------------
