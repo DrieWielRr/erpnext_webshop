@@ -12,7 +12,6 @@ from frappe.contacts.doctype.contact.contact import get_contact_name
 from frappe.utils import cint, cstr, flt, get_fullname, add_days, nowdate
 from frappe.utils.nestedset import get_root_of
 from webshop.utils import log
-from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
 
 from erpnext.accounts.utils import get_account_name
 from webshop.webshop.doctype.webshop_settings.webshop_settings import (
@@ -1232,50 +1231,43 @@ def show_terms(doc):
 
 
 @frappe.whitelist(allow_guest=True)
-def apply_coupon_code(applied_code, applied_referral_sales_partner=None):
+def apply_coupon_code(applied_code, applied_referral_sales_partner):
     if not applied_code:
         frappe.throw(_("Please enter a coupon code"))
 
-    coupon_list = frappe.get_all("Coupon Code", filters={"coupon_code": applied_code})
+    coupon_list = frappe.get_all(
+        "Coupon Code",
+        filters={"coupon_code": applied_code}
+    )
+
     if not coupon_list:
         frappe.throw(_("Please enter a valid coupon code"))
 
     coupon_name = coupon_list[0].name
 
-    # Validate coupon limits/dates
+    from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
     validate_coupon_code(coupon_name)
 
-    # Fetch the shopping cart quotation doc
     quotation = _get_cart_quotation()
+
     quotation.ignore_pricing_rule = 0
     quotation.coupon_code = coupon_name
 
     if applied_referral_sales_partner:
         sales_partner_list = frappe.get_all(
-            "Sales Partner", filters={"referral_code": applied_referral_sales_partner}
+            "Sales Partner",
+            filters={"referral_code": applied_referral_sales_partner}
         )
+
         if sales_partner_list:
             quotation.referral_sales_partner = sales_partner_list[0].name
 
-    # --- RECALCULATION ENGINE ---
-    # Reset pricing rule state on items so ERPNext re-evaluates them from scratch
-    for item in quotation.items:
-        item.pricing_rules = None
-        item.discount_percentage = 0.0
-
-    # Trigger ERPNext's built-in item re-evaluation
-    quotation.set_missing_values()
-    
-    # Recalculate net rates, taxes, and grand total
-    quotation.calculate_taxes_and_totals()
-
-    # Save with explicit permission bypass flags
     quotation.flags.ignore_permissions = True
-    quotation.flags.ignore_mandatory = True
-    quotation.save(ignore_permissions=True)
 
-    #Reset global flag
-    frappe.flags.ignore_permissions = False
+    # Recalculate pricing rules / totals
+    quotation.run_method("calculate_taxes_and_totals")
+
+    quotation.save()
 
     return quotation
 
