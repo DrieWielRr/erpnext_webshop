@@ -39,9 +39,18 @@
 					<div class="item-title mb-1 mr-3">
 						{{ d.get("web_item_name") or d.item_name }}
 					</div>
+
+					{% set route = frappe.db.get_value(
+						"Website Item",
+						{"item_code": d.item_code},
+						"route"
+					) %}
 					<div class="item-subtitle mr-2">
-						{{ d.item_code }}
+						<a class="product-link product-list-link" href="/{{ route or '#' }}">
+							{{ d.item_code }}
+						</a>
 					</div>
+
 					<div class="item-configurations"></div>	
 					{% set config_list = parse_json(d.custom_item_configurations) %}
 

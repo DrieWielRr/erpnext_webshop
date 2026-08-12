@@ -307,7 +307,7 @@
 			const $btn = $(e.currentTarget);
 			$btn.prop('disabled', true);
 			
-			// We send our custom data through the wrapper's args			
+			// Send our custom data through the wrapper's args			
 			const args = {
 				item_code: $btn.data('item-code'),
 				qty: 1,
@@ -320,6 +320,9 @@
 				...args,
 				callback(r) {
 					$btn.prop('disabled', false);
+					if (!r.exc) {
+						window.location.href = '/cart';
+					}
 				}
 			});
 		});
