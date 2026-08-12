@@ -507,10 +507,13 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
         log(f"Re-calculate taxes and totals")
         doc.calculate_taxes_and_totals()
+
+        log(f"Updating payment schedule")
         payment_terms_template = update_payment_schedule_for_delivery(doc)
 
         log(
-            f"Restored template={payment_terms_template}, "
+            f"Payment schedule prepared. "
+            f"Template={payment_terms_template}, "
             f"schedule={doc.get('payment_schedule')}"
         )
         doc.save(ignore_permissions=True)
