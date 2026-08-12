@@ -144,7 +144,11 @@ def update_payment_schedule_for_delivery(quotation):
     grand_total = flt(quotation.grand_total, 2)
 
     if not schedule or grand_total <= 0:
+        log(f"Payment schedule: schedule = {schedule}, grand_total: {grand_total}")
         return
+
+    # Remember the template because we temporarily detach it
+    payment_terms_template = quotation.get("payment_terms_template")
 
     # Detach template so ERPNext core won't reset numbers on save
     quotation.payment_terms_template = None
@@ -212,7 +216,7 @@ def update_payment_schedule_for_delivery(quotation):
     # Force ORM change detection
     quotation.set("payment_schedule", schedule)
 
-
+    return payment_terms_template
 
 # --------------------------------------------------------------------
 # SHOP ADDRESS
@@ -503,8 +507,29 @@ def update_shipping(quotation, include_shipping, delivery_date=None):
 
         log(f"Re-calculate taxes and totals")
         doc.calculate_taxes_and_totals()
-        update_payment_schedule_for_delivery(doc)
+        payment_terms_template = update_payment_schedule_for_delivery(doc)
+
+        log(
+            f"Restored template={payment_terms_template}, "
+            f"schedule={doc.get('payment_schedule')}"
+        )
         doc.save(ignore_permissions=True)
+
+        if payment_terms_template:
+            frappe.db.set_value(
+                "Quotation",
+                doc.name,
+                "payment_terms_template",
+                payment_terms_template,
+                update_modified=False,
+            )
+
+        saved_template = frappe.db.get_value(
+            "Quotation",
+            doc.name,
+            "payment_terms_template"
+        )
+        log(f"DB template after restore={saved_template}")
 
         log(
             f"Saved quotation {doc.name} "
