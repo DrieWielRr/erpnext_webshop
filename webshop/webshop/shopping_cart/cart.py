@@ -297,6 +297,10 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 		valid_configuration = True
 
 	quotation = _get_cart_quotation()
+	customer = quotation.get("customer")
+	customer_name = frappe.db.get_value("Customer", customer, "customer_name") if customer else None
+
+
 	if valid_configuration:
 		item_is_customized = bool(item_configuration)
 		item_configuration_hash = generate_configuration_hash(
@@ -314,15 +318,17 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False, configu
 		# Force qty to float immediately to ensure all numerical comparisons are safe
 		qty = flt(qty)
 		
-		log(f"quotation name={quotation.get("name")}")
+		log(f"quotation name={quotation.get('name')}")
 		quotation.valid_till = add_days(nowdate(), 14)
 		log(f"quotation valid_till={quotation.get("valid_till")}")
+		log(f"customer={customer}")
+		log(f"customer name={customer_name}")
 
 		empty_card = False    
 		if qty == 0:
 			quotation_items = [
 				d for d in quotation.items
-				if d.item_code == item_code
+				if d.item_code != item_code
 				and d.custom_config_hash != item_configuration_hash
 			]
 			if quotation_items:
