@@ -125,7 +125,7 @@ frappe.ready(() => {
 
 				d.set_value(
 					'subject',
-					__('Inquiry about') + ' "' + inquiry_item_name + '"'
+					__('Inquiry about') + ' "' + __(inquiry_item_name) + '"'
 				);
 
 				if (!['Administrator', 'Guest'].includes(frappe.session.user)) {

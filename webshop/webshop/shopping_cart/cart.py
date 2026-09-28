@@ -727,8 +727,7 @@ def create_lead_for_item_inquiry(
 	if existing_lead:
 		lead_doc = frappe.get_doc("Lead", existing_lead)
 
-		# Keep the latest inquiry information on the Lead
-		lead_doc.set("custom_item_name", item_name)
+		# Keep the latest inquiry information on the Lead		
 		lead_doc.set("custom_item_code", item_code)
 		lead_doc.set("custom_inquiry", message)
 		lead_doc.set("custom_inquiry_route", item_route)
@@ -741,8 +740,7 @@ def create_lead_for_item_inquiry(
 			lead_doc.set(fieldname, lead.get(fieldname))
 
 		lead_doc.set("lead_owner", "")
-		lead_doc.set("utm_source", "Product Inquiry")
-		lead_doc.set("custom_item_name", item_name)
+		lead_doc.set("utm_source", "Product Inquiry")		
 		lead_doc.set("custom_item_code", item_code)
 		lead_doc.set("custom_inquiry", message)
 		lead_doc.set("custom_inquiry_route", item_route)
