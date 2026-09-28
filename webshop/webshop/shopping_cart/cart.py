@@ -709,7 +709,6 @@ def create_lead_for_item_inquiry(
 	subject,
 	message,
 	item_code,
-	item_name,
 	item_route,
 ):
 	lead = frappe.parse_json(lead)

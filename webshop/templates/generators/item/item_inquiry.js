@@ -104,7 +104,6 @@ frappe.ready(() => {
 						subject: values.subject,
 						message: values.message,
 						item_code: inquiry_item_code,
-						item_name: inquiry_item_name,
 						item_route: inquiry_item_route
 					}
 				).then(r => {
@@ -115,14 +114,13 @@ frappe.ready(() => {
 			}
 
 			let inquiry_item_code = null;
-			let inquiry_item_name = null;
 			let inquiry_item_route = null;
 
 			$('.btn-inquiry').click((e) => {
 				const $btn = $(e.currentTarget);
+				const inquiry_item_name = $btn.data('item-name');
 
 				inquiry_item_code = $btn.data('item-code');
-				inquiry_item_name = $btn.data('item-name');
 				inquiry_item_route = window.location.pathname;
 
 				d.set_value(
