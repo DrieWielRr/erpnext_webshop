@@ -100,7 +100,9 @@ frappe.ready(() => {
 				frappe.call('webshop.webshop.shopping_cart.cart.create_lead_for_item_inquiry', {
 					lead: doc,
 					subject: values.subject,
-					message: values.message
+					message: values.message,
+					item_code: item_code,
+					item_route: item_route
 				}).then(r => {
 					if (r.message) {
 						d.clear();

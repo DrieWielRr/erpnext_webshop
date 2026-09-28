@@ -703,29 +703,44 @@ def add_new_address(doc):
 
 	return address
 
-
 @frappe.whitelist(allow_guest=True)
-def create_lead_for_item_inquiry(lead, subject, message):
+def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
 	lead = frappe.parse_json(lead)
-	lead_doc = frappe.new_doc("Lead")
-	for fieldname in ("lead_name", "company_name", "email_id", "phone"):
-		lead_doc.set(fieldname, lead.get(fieldname))
 
-	lead_doc.set("lead_owner", "")
+	# Find an existing Product Inquiry Lead for this customer + item
+	existing_lead = frappe.db.get_value(
+		"Lead",
+		{
+			"email_id": lead.get("email_id"),
+			"custom_inquiry_item": item_code,
+			"utm_source": "Product Inquiry",
+		},
+		"name",
+	)
 
-	if not frappe.db.exists("Lead Source", "Product Inquiry"):
-		frappe.get_doc(
-			{"doctype": "Lead Source", "source_name": "Product Inquiry"}
-		).insert(ignore_permissions=True)
+	if existing_lead:
+		lead_doc = frappe.get_doc("Lead", existing_lead)
 
-	lead_doc.set("source", "Product Inquiry")
-
-	try:
+		# Keep the latest inquiry visible on the Lead
+		lead_doc.set("custom_inquiry", message)
+		lead_doc.set("custom_inquiry_route", item_route)
 		lead_doc.save(ignore_permissions=True)
-	except frappe.exceptions.DuplicateEntryError:
-		frappe.clear_messages()
-		lead_doc = frappe.get_doc("Lead", {"email_id": lead["email_id"]})
 
+	else:
+		lead_doc = frappe.new_doc("Lead")
+
+		for fieldname in ("lead_name", "company_name", "email_id", "phone"):
+			lead_doc.set(fieldname, lead.get(fieldname))
+
+		lead_doc.set("lead_owner", "")
+		lead_doc.set("utm_source", "Product Inquiry")
+		lead_doc.set("custom_inquiry_item", item_code)
+		lead_doc.set("custom_inquiry_route", item_route)
+		lead_doc.set("custom_inquiry", message)
+
+		lead_doc.insert(ignore_permissions=True)
+
+	# Keep every inquiry in the Lead timeline
 	lead_doc.add_comment(
 		"Comment",
 		text="""
@@ -733,12 +748,14 @@ def create_lead_for_item_inquiry(lead, subject, message):
 			<h5>{subject}</h5>
 			<p>{message}</p>
 		</div>
-	""".format(
-			subject=subject, message=message
+		""".format(
+			subject=subject,
+			message=message,
 		),
 	)
 
 	return lead_doc
+
 
 
 @frappe.whitelist()
