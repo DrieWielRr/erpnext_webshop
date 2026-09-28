@@ -704,7 +704,14 @@ def add_new_address(doc):
 	return address
 
 @frappe.whitelist(allow_guest=True)
-def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
+def create_lead_for_item_inquiry(
+	lead,
+	subject,
+	message,
+	item_code,
+	item_name,
+	item_route,
+):
 	lead = frappe.parse_json(lead)
 
 	# Find an existing Product Inquiry Lead for this customer + item
@@ -712,7 +719,7 @@ def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
 		"Lead",
 		{
 			"email_id": lead.get("email_id"),
-			"custom_inquiry_item": item_code,
+			"custom_item_code": item_code,
 			"utm_source": "Product Inquiry",
 		},
 		"name",
@@ -721,7 +728,9 @@ def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
 	if existing_lead:
 		lead_doc = frappe.get_doc("Lead", existing_lead)
 
-		# Keep the latest inquiry visible on the Lead
+		# Keep the latest inquiry information on the Lead
+		lead_doc.set("custom_item_name", item_name)
+		lead_doc.set("custom_item_code", item_code)
 		lead_doc.set("custom_inquiry", message)
 		lead_doc.set("custom_inquiry_route", item_route)
 		lead_doc.save(ignore_permissions=True)
@@ -734,9 +743,10 @@ def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
 
 		lead_doc.set("lead_owner", "")
 		lead_doc.set("utm_source", "Product Inquiry")
-		lead_doc.set("custom_inquiry_item", item_code)
-		lead_doc.set("custom_inquiry_route", item_route)
+		lead_doc.set("custom_item_name", item_name)
+		lead_doc.set("custom_item_code", item_code)
 		lead_doc.set("custom_inquiry", message)
+		lead_doc.set("custom_inquiry_route", item_route)
 
 		lead_doc.insert(ignore_permissions=True)
 
@@ -755,7 +765,6 @@ def create_lead_for_item_inquiry(lead, subject, message, item_code, item_route):
 	)
 
 	return lead_doc
-
 
 
 @frappe.whitelist()

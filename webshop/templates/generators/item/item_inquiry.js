@@ -97,23 +97,39 @@ frappe.ready(() => {
 
 				d.hide();
 
-				frappe.call('webshop.webshop.shopping_cart.cart.create_lead_for_item_inquiry', {
-					lead: doc,
-					subject: values.subject,
-					message: values.message,
-					item_code: item_code,
-					item_route: item_route
-				}).then(r => {
+				frappe.call(
+					"webshop.webshop.shopping_cart.cart.create_lead_for_item_inquiry",
+					{
+						lead: doc,
+						subject: values.subject,
+						message: values.message,
+						item_code: inquiry_item_code,
+						item_name: inquiry_item_name,
+						item_route: inquiry_item_route
+					}
+				).then(r => {
 					if (r.message) {
 						d.clear();
 					}
 				});
 			}
 
+			let inquiry_item_code = null;
+			let inquiry_item_name = null;
+			let inquiry_item_route = null;
+
 			$('.btn-inquiry').click((e) => {
-				const $btn = $(e.target);
-				const item_code = $btn.data('item-code');
-				d.set_value('subject', __('Inquiry about') + ' ' + item_code);
+				const $btn = $(e.currentTarget);
+
+				inquiry_item_code = $btn.data('item-code');
+				inquiry_item_name = $btn.data('item-name');
+				inquiry_item_route = window.location.pathname;
+
+				d.set_value(
+					'subject',
+					__('Inquiry about') + ' "' + inquiry_item_name + '"'
+				);
+
 				if (!['Administrator', 'Guest'].includes(frappe.session.user)) {
 					d.set_value('email_id', frappe.session.user);
 					d.set_value('lead_name', frappe.get_cookie('full_name'));
